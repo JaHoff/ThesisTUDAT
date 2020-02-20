@@ -1,3 +1,0 @@
-"D:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\application_TestApp.dir/objects.a
-D:\Qt\Tools\mingw730_64\bin\ar.exe cr CMakeFiles\application_TestApp.dir/objects.a @CMakeFiles\application_TestApp.dir\objects1.rsp
-D:\Qt\Tools\mingw730_64\bin\g++.exe -Wall -std=c++11 -Wextra -Wno-unused-parameter -Wno-unused-variable -Woverloaded-virtual -Wold-style-cast -Wnon-virtual-dtor -fPIC -O2 -DNDEBUG   -Wl,--whole-archive CMakeFiles\application_TestApp.dir/objects.a -Wl,--no-whole-archive  -o D:\TUDAT\tudatBundle\tudatApplications\bin\applications\application_TestApp.exe -Wl,--out-implib,libapplication_TestApp.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\application_TestApp.dir\linklibs.rsp

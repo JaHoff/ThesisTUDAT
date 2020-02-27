@@ -12,7 +12,7 @@
 
 #include "TestApp/applicationOutput.h"
 
-//! Execute propagation of orbit of Asterix around the Earth.
+//! Execute propagation of orbit of Asterix and Obelix around the Earth.
 int main( )
 {
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +64,8 @@ int main( )
     // Create spacecraft object.
     bodyMap[ "Asterix" ] = std::make_shared< simulation_setup::Body >( );
     bodyMap[ "Asterix" ]->setConstantBodyMass( 400.0 );
+    bodyMap[ "Obelix" ] = std::make_shared< simulation_setup::Body >();
+    bodyMap["Obelix"]->setConstantBodyMass(50.0);
 
     // Create aerodynamic coefficient interface settings.
     double referenceArea = 4.0;
@@ -75,6 +77,8 @@ int main( )
     // Create and set aerodynamic coefficients object
     bodyMap[ "Asterix" ]->setAerodynamicCoefficientInterface(
                 createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Asterix" ) );
+    bodyMap[ "Obelix"]->setAerodynamicCoefficientInterface(
+                createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Obelix"));
 
     // Create radiation pressure settings
     double referenceAreaRadiation = 4.0;
@@ -89,6 +93,9 @@ int main( )
     bodyMap[ "Asterix" ]->setRadiationPressureInterface(
                 "Sun", createRadiationPressureInterface(
                     asterixRadiationPressureSettings, "Asterix", bodyMap ) );
+    bodyMap[ "Obelix" ]->setRadiationPressureInterface(
+                "Sun", createRadiationPressureInterface(
+                    asterixRadiationPressureSettings, "Obelix", bodyMap));
 
     // Finalize body creation.
     setGlobalFrameBodyEphemerides( bodyMap, "SSB", "J2000" );
@@ -123,8 +130,11 @@ int main( )
                                                      basic_astrodynamics::aerodynamic ) );
 
     accelerationMap[ "Asterix" ] = accelerationsOfAsterix;
+    accelerationMap[ "Obelix" ] = accelerationsOfAsterix;
     bodiesToPropagate.push_back( "Asterix" );
     centralBodies.push_back( "Earth" );
+    bodiesToPropagate.push_back("Obelix");
+    centralBodies.push_back("Earth");
 
     basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
                 bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
@@ -137,19 +147,34 @@ int main( )
     Eigen::Vector6d asterixInitialStateInKeplerianElements;
     asterixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 7500.0E3;
     asterixInitialStateInKeplerianElements( eccentricityIndex ) = 0.1;
-    asterixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 85.3 );
+    asterixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 0 );
     asterixInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 235.7 );
     asterixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
     asterixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 139.87 );
 
+    // Set Keplerian elements for Obelix.
+    Eigen::Vector6d obelixInitialStateInKeplerianElements;
+    obelixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 7500.05E3;
+    obelixInitialStateInKeplerianElements( eccentricityIndex ) = 0.1;
+    obelixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 1.5 );
+    obelixInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 235.7 );
+    obelixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
+    obelixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 139.87 );
     double earthGravitationalParameter = bodyMap.at( "Earth" )->getGravityFieldModel( )->getGravitationalParameter( );
     const Eigen::Vector6d asterixInitialState = convertKeplerianToCartesianElements(
                 asterixInitialStateInKeplerianElements, earthGravitationalParameter );
 
+    const Eigen::Vector6d obelixInitialState = convertKeplerianToCartesianElements(
+                obelixInitialStateInKeplerianElements, earthGravitationalParameter );
+
+    // Set initial state
+    Eigen::VectorXd systemInitialState = Eigen::VectorXd( 12 );
+    systemInitialState.segment( 0, 6 ) = asterixInitialState;
+    systemInitialState.segment( 6, 6 ) = obelixInitialState;
 
     std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             std::make_shared< TranslationalStatePropagatorSettings< double > >
-            ( centralBodies, accelerationModelMap, bodiesToPropagate, asterixInitialState, simulationEndEpoch );
+            ( centralBodies, accelerationModelMap, bodiesToPropagate, systemInitialState, simulationEndEpoch );
 
     const double fixedStepSize = 10.0;
     std::shared_ptr< IntegratorSettings< > > integratorSettings =
@@ -170,7 +195,7 @@ int main( )
     ///////////////////////        PROVIDE OUTPUT TO CONSOLE AND FILES           //////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    std::string outputSubFolder = "PerturbedSatelliteExample/";
+    std::string outputSubFolder = "DuoPerturbedLEO/";
 
     Eigen::VectorXd finalIntegratedState = (--integrationResult.end( ) )->second;
     // Print the position (in km) and the velocity (in km/s) at t = 0.

@@ -175,3 +175,8 @@ include(tudatLinkLibraries)
 add_executable(application_TestApp "${SRCROOT}/TestApp.cpp")
 setup_executable_target(application_TestApp "${SRCROOT}")
 target_link_libraries(application_TestApp ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES}  )
+
+# Add L4 application.
+add_executable(application_L4test "${SRCROOT}/TestL4.cpp")
+setup_executable_target(application_L4test "${SRCROOT}")
+target_link_libraries(application_L4test ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES}  )

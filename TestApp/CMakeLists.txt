@@ -180,3 +180,8 @@ target_link_libraries(application_TestApp ${TUDAT_PROPAGATION_LIBRARIES} ${Boost
 add_executable(application_L4test "${SRCROOT}/TestL4.cpp")
 setup_executable_target(application_L4test "${SRCROOT}")
 target_link_libraries(application_L4test ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES}  )
+
+# Add perturbation analysis application.
+add_executable(T_perturbationAnalysis "${SRCROOT}/T_PerturbationAnalysis.cpp")
+setup_executable_target(T_perturbationAnalysis "${SRCROOT}")
+target_link_libraries(T_perturbationAnalysis ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES}  )

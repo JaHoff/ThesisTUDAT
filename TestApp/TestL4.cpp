@@ -31,14 +31,13 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////     CREATE ENVIRONMENT AND VEHICLE       //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Save name settings
-    const string nameAttach = "_1yrP";
+
     // Load Spice kernels.
     spice_interface::loadStandardSpiceKernels( );
 
     // Set simulation time settings.
     const double simulationStartEpoch = 0.0;
-    const double simulationEndEpoch = 1*365.25*tudat::physical_constants::JULIAN_DAY;
+    const double simulationEndEpoch = 5*tudat::physical_constants::JULIAN_DAY;
 
     // Define body settings for simulation.
     std::vector< std::string > bodiesToCreate;
@@ -115,39 +114,30 @@ int main( )
     std::vector< std::string > centralBodies;
 
     // Define propagation settings.
-    std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-    accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-    accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+    std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfAsterix;
+
+    accelerationsOfAsterix[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+
+    accelerationsOfAsterix[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                    basic_astrodynamics::central_gravity ) );
-    accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+    accelerationsOfAsterix[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::central_gravity ) );
-    accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+    accelerationsOfAsterix[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::central_gravity ) );
-    accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+    accelerationsOfAsterix[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::central_gravity ) );
-    accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+
+    accelerationsOfAsterix[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::cannon_ball_radiation_pressure ) );
-    accelerationsOfSats[ "Earth" ].push_back( std::make_shared< AccelerationSettings >(
+
+    accelerationsOfAsterix[ "Earth" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::aerodynamic ) );
 
-    accelerationMap[ "Asterix" ] = accelerationsOfSats;
-    accelerationMap[ "Obelix" ] = accelerationsOfSats;
-
-    std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-    accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-    accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                   basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationMap[ "Moon" ] = accelerationsOfMoon;
-
+    accelerationMap[ "Asterix" ] = accelerationsOfAsterix;
+    accelerationMap[ "Obelix" ] = accelerationsOfAsterix;
     bodiesToPropagate.push_back( "Asterix" );
     centralBodies.push_back( "Earth" );
     bodiesToPropagate.push_back("Obelix");
-    centralBodies.push_back("Earth");
-    bodiesToPropagate.push_back("Moon");
     centralBodies.push_back("Earth");
 
     basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
@@ -159,84 +149,58 @@ int main( )
 
 
     // Set Keplerian elements for Asterix.
-    //Eigen::Vector6d asterixInitialStateInKeplerianElements;
-    //asterixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 7500.0E3;
-    //asterixInitialStateInKeplerianElements( eccentricityIndex ) = 0.1;
-    //asterixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 0 );
-    //asterixInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 235.7 );
-    //asterixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
-    //asterixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 139.87 );
+    Eigen::Vector6d asterixInitialStateInKeplerianElements;
+    asterixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 7500.0E3;
+    asterixInitialStateInKeplerianElements( eccentricityIndex ) = 0.1;
+    asterixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 0 );
+    asterixInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 235.7 );
+    asterixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
+    asterixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 139.87 );
 
     // Set Keplerian elements for Obelix.
-    //Eigen::Vector6d obelixInitialStateInKeplerianElements;
-    //obelixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 7500.05E3;
-    //obelixInitialStateInKeplerianElements( eccentricityIndex ) = 0.1;
-    //obelixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 1.5 );
-    //obelixInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 235.7 );
-    //obelixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
-    //obelixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 139.87 );
-    //double earthGravitationalParameter = bodyMap.at( "Earth" )->getGravityFieldModel( )->getGravitationalParameter( );
-    //const Eigen::Vector6d asterixInitialState = convertKeplerianToCartesianElements(
-    //            asterixInitialStateInKeplerianElements, earthGravitationalParameter );
+    Eigen::Vector6d obelixInitialStateInKeplerianElements;
+    obelixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 7500.05E3;
+    obelixInitialStateInKeplerianElements( eccentricityIndex ) = 0.1;
+    obelixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 1.5 );
+    obelixInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 235.7 );
+    obelixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
+    obelixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 139.87 );
+    double earthGravitationalParameter = bodyMap.at( "Earth" )->getGravityFieldModel( )->getGravitationalParameter( );
+    const Eigen::Vector6d asterixInitialState = convertKeplerianToCartesianElements(
+                asterixInitialStateInKeplerianElements, earthGravitationalParameter );
 
     //const Eigen::Vector6d obelixInitialState = convertKeplerianToCartesianElements(
     //            obelixInitialStateInKeplerianElements, earthGravitationalParameter );
 
-    Eigen::Vector6d moonInitialState = getInitialStateOfBody("Moon", "Earth", bodyMap, simulationStartEpoch);
-    Eigen::Vector3d earthMoonVector = moonInitialState.segment(0,3);
-    Eigen::Vector3d moonVelocity = moonInitialState.segment(3,3);
-    std::cout << "earthMoonVector vector is " << earthMoonVector << std::endl;
-    std::cout << "moonVelocity vector is " << moonVelocity << std::endl;
-    Eigen::Vector3d moonMomentum = earthMoonVector.cross(moonVelocity);
-    Eigen::Vector3d L4dir = -earthMoonVector.cross(moonMomentum);
-    Eigen::Vector3d L4Cart = 0.5*earthMoonVector + 0.5*sqrt(3)*earthMoonVector.norm()*L4dir.normalized();
-    std::cout << "moonMomentum vector is " << moonMomentum << std::endl;
-    std::cout << "L4dir vector is " << L4dir.normalized() << std::endl;
-    std::cout << "L4Cart state vector is " << L4Cart << std::endl;
 
-    Eigen::Vector3d L4initVelocity = -L4Cart.cross(moonMomentum).normalized() * moonVelocity.norm();
-    Eigen::Vector3d displaceVelocity = moonMomentum.normalized() * 11;
+    Eigen::Vector3d earthMoonVector = bodyMap["Moon"]->getPosition(); bodyMap["Moon"]->get
+    Eigen::Vector3d moonVelocity = bodyMap["Moon"]->getVelocity();
+    Eigen::Vector3d moonMomentum = earthMoonVector.cross(moonVelocity);
+    Eigen::Vector3d L4dir = earthMoonVector.cross(moonMomentum);
+    Eigen::Vector3d L4Cart = 0.5*earthMoonVector + 0.5*sqrt(3)*earthMoonVector.norm()*L4dir.normalized();
 
     Eigen::Vector6d obelixInitialState = Eigen::Vector6d();
-    obelixInitialState.segment(0,3) = L4Cart;
-    obelixInitialState.segment(3,3) = L4initVelocity + displaceVelocity;
-    //obelixInitialState(3) += 11;
-
-    Eigen::Vector6d asterixDisplacement = Eigen::Vector6d();
-    asterixDisplacement(0) = 100;
-    asterixDisplacement(1) = 1e3;
-
-    Eigen::Vector6d asterixInitialState = Eigen::Vector6d();
-    asterixInitialState.segment(0,3) = L4Cart + asterixDisplacement.segment(0,3);
-    asterixInitialState.segment(3,3) = L4initVelocity + displaceVelocity;
-    //asterixInitialState(3) += 11;
+    obelixInitialState(0) = L4Cart(0);
+    obelixInitialState(1) = L4Cart(1);
+    obelixInitialState(2) = L4Cart(2);
+    obelixInitialState(4) = 11;
+    obelixInitialState(5) = 0;
+    obelixInitialState(6) = 0;
     std::cout << "Initial L4 state vector is " << obelixInitialState << std::endl;
-    std::cout << "Initial Moon state vector is " << moonInitialState << std::endl;
-
 
     // Set initial state
-    Eigen::VectorXd systemInitialState = Eigen::VectorXd( 18 );
+    Eigen::VectorXd systemInitialState = Eigen::VectorXd( 12 );
     systemInitialState.segment( 0, 6 ) = asterixInitialState;
     systemInitialState.segment( 6, 6 ) = obelixInitialState;
-    systemInitialState.segment(12,6) = moonInitialState;
 
     std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             std::make_shared< TranslationalStatePropagatorSettings< double > >
             ( centralBodies, accelerationModelMap, bodiesToPropagate, systemInitialState, simulationEndEpoch );
 
-    //const double fixedStepSize = 10.0;
-    //std::shared_ptr< IntegratorSettings< > > integratorSettings =
-    //        std::make_shared< IntegratorSettings< > >
-    //        ( rungeKutta4, 0.0, fixedStepSize );
-
-    const double minimumStepSize = 0.1;
-    const double maximumStepSize = 24*3600;
-    const double relativeErrorTolerance = 1E-8;
-    const double absoluteErrorTolerance = 1E-8;
-    std::shared_ptr< RungeKuttaVariableStepSizeSettings<> > integratorSettings =
-            std::make_shared< RungeKuttaVariableStepSizeSettings <> >
-            ( 0.0, 10, RungeKuttaCoefficients::rungeKuttaFehlberg56,minimumStepSize,maximumStepSize,
-              relativeErrorTolerance, absoluteErrorTolerance);
+    const double fixedStepSize = 10.0;
+    std::shared_ptr< IntegratorSettings< > > integratorSettings =
+            std::make_shared< IntegratorSettings< > >
+            ( rungeKutta4, 0.0, fixedStepSize );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
@@ -245,7 +209,7 @@ int main( )
 
     // Create simulation object and propagate dynamics.
     SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap, integratorSettings, propagatorSettings );
-    std::map< double, Eigen::VectorXd > integrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution();
+    std::map< double, Eigen::VectorXd > integrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -271,7 +235,7 @@ int main( )
 
     // Write perturbed satellite propagation history to file.
     input_output::writeDataMapToTextFile( integrationResult,
-                                          "propagationHistory"+nameAttach+".dat",
+                                          "propagationHistory.dat",
                                           tudat_applications::getOutputPath( ) + outputSubFolder,
                                           "",
                                           std::numeric_limits< double >::digits10,

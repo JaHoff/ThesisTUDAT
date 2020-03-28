@@ -33,14 +33,17 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Save name settings
 
-
+    const string attachment = "_365d";
 
     // Load Spice kernels.
-    spice_interface::loadStandardSpiceKernels( );
+    //const string kernelfile = input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp";
+    std::vector< std::string > kernelfile;
+    kernelfile.push_back(input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp");
+    spice_interface::loadStandardSpiceKernels(kernelfile);
 
     // Set simulation time settings.
-    const double simulationStartEpoch = 0.0;
-    const double simulationEndEpoch = 30*tudat::physical_constants::JULIAN_DAY;
+    const double simulationStartEpoch = 30*tudat::physical_constants::JULIAN_YEAR; // 2030 start date
+    const double simulationEndEpoch = simulationStartEpoch + 365*tudat::physical_constants::JULIAN_DAY;
 
     // Define body settings for simulation.
     std::vector< std::string > bodiesToCreate;
@@ -50,6 +53,9 @@ int main( )
     bodiesToCreate.push_back( "Mars" );
     bodiesToCreate.push_back( "Venus" );
     bodiesToCreate.push_back("Jupiter");
+    bodiesToCreate.push_back("Saturn");
+    bodiesToCreate.push_back("Neptune");
+    bodiesToCreate.push_back("Uranus");
 
     // Create body objects.
     std::map< std::string, std::shared_ptr< BodySettings > > bodySettings =
@@ -88,6 +94,18 @@ int main( )
                 "Sun", createRadiationPressureInterface(
                     asterixRadiationPressureSettings, "Obelix", bodyMap));
 
+    // Create radiation pressure settings
+    referenceAreaRadiation = tudat::mathematical_constants::PI * (1734E3)*(1734E3);
+    radiationPressureCoefficient = 1.14; // Moon albedo is about 0.14 - wiki
+    std::shared_ptr< RadiationPressureInterfaceSettings > moonRadiationPressureSettings =
+            std::make_shared< CannonBallRadiationPressureInterfaceSettings >(
+                "Sun", referenceAreaRadiation, radiationPressureCoefficient, occultingBodies );
+
+    // Create and set radiation pressure settings
+    bodyMap[ "Moon" ]->setRadiationPressureInterface(
+                "Sun", createRadiationPressureInterface(
+                    moonRadiationPressureSettings, "Moon", bodyMap ));
+
     // Finalize body creation.
     setGlobalFrameBodyEphemerides( bodyMap, "SSB", "J2000" );
 
@@ -107,7 +125,7 @@ int main( )
     bodiesToPropagate.push_back("Moon");
     centralBodies.push_back("Earth");
 
-    const int numcases = 17;
+    const int numcases = 23;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////                   CASES                  //////////////////////////////////////////////////////
@@ -115,27 +133,35 @@ int main( )
     /// 0: Default full model
     /// 1: Remove Mars
     /// 2: Remove Venus
-    /// 3: Remove Radiation Pressure
-    /// 4: Remove Jupiter
-    /// 5: Remove Spherical Harmonics
-    /// 6: SH: 10,10
-    /// 7: SH: 20,20
-    /// 8: SHM: 5,5
-    /// 9: SHM: 10,10
-    /// 10: SHM: 20,20
-    /// 11: Moon - remove Jupiter
-    /// 12: Moon - remove Venus
-    /// 13: Moon - remove Mars
-    /// 14: Moon - remove Sun
-    /// 15: Moon - remove SH
-    /// 16: Moon - SH 10,10
-    /// 17: Moon - SH 20,20
+    /// 3: Remove Sun
+    /// 4: Remove Radiation Pressure
+    /// 5: Remove Jupiter
+    /// 6: Remove Saturn
+    /// 7: Remove Neptune
+    /// 8: Remove Uranus
+    /// 9: Remove Spherical Harmonics
+    /// 10: SH: 10,10
+    /// 11: SH: 20,20
+    /// 12: SHM: 5,5
+    /// 13: SHM: 10,10
+    /// 14: SHM: 20,20
+    /// 15: Moon - remove Mars
+    /// 16: Moon - remove Venus
+    /// 17: Moon - remove Sun
+    /// 18: Moon - remove Radiation Pressure
+    /// 19: Moon - remove Jupiter
+    /// 20: Moon - remove Saturn
+    /// 21: Moon - remove Neptune
+    /// 22: Moon - remove Uranus
+    /// 23: Moon - remove SH
+    /// 24: Moon - SH 10,10
+    /// 25: Moon - SH 20,20
     ///
     ///
 
 
 
-    for (int i = 0; i < numcases; i++){
+    for (int i = 0; i <= numcases; i++){
         const string nameAttach = "_"+ std::to_string(i);
         switch(i){
         case 0:{
@@ -152,6 +178,12 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -168,6 +200,14 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
 
@@ -184,6 +224,12 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -200,6 +246,14 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -215,6 +269,12 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -231,6 +291,14 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -238,8 +306,6 @@ int main( )
             // Define propagation settings.
             std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
             accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
@@ -248,6 +314,15 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
             accelerationMap[ "Asterix" ] = accelerationsOfSats;
             accelerationMap[ "Obelix" ] = accelerationsOfSats;
 
@@ -261,6 +336,14 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -276,6 +359,57 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 5:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -292,14 +426,21 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
-        case 5:{
+        case 6:{
             // Define propagation settings.
             std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< AccelerationSettings >(
-                                                          basic_astrodynamics::central_gravity )  );
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
@@ -310,6 +451,10 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -326,10 +471,156 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
-        case 6:{
+        case 7:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 8:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 9:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< AccelerationSettings > (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 10:{
             // Define propagation settings.
             std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
             accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 10, 10 ) );
@@ -343,6 +634,12 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -359,142 +656,21 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
-            accelerationMap[ "Moon" ] = accelerationsOfMoon;
-            break;
-        }
-        case 7:{
-            // Define propagation settings.
-            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 20, 20) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
-
-            accelerationMap[ "Asterix" ] = accelerationsOfSats;
-            accelerationMap[ "Obelix" ] = accelerationsOfSats;
-
-            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationMap[ "Moon" ] = accelerationsOfMoon;
-            break;
-        }
-        case 8:{
-            // Define propagation settings.
-            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
-
-            accelerationMap[ "Asterix" ] = accelerationsOfSats;
-            accelerationMap[ "Obelix" ] = accelerationsOfSats;
-
-            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationMap[ "Moon" ] = accelerationsOfMoon;
-            break;
-        }
-        case 9:{
-            // Define propagation settings.
-            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 10, 10 ) );
-            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
-
-            accelerationMap[ "Asterix" ] = accelerationsOfSats;
-            accelerationMap[ "Obelix" ] = accelerationsOfSats;
-
-            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationMap[ "Moon" ] = accelerationsOfMoon;
-            break;
-        }
-        case 10:{
-            // Define propagation settings.
-            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 20, 20 ) );
-            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
-
-            accelerationMap[ "Asterix" ] = accelerationsOfSats;
-            accelerationMap[ "Obelix" ] = accelerationsOfSats;
-
-            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                           basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
         case 11:{
             // Define propagation settings.
             std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 20, 20 ) );
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
@@ -505,6 +681,12 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -519,6 +701,16 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -528,14 +720,19 @@ int main( )
             accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings > (5,5) );
             accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -548,8 +745,18 @@ int main( )
                                                            basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -559,14 +766,19 @@ int main( )
             accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings > (10,10) );
             accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -577,10 +789,20 @@ int main( )
             accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
             accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -590,14 +812,19 @@ int main( )
             accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings > (20,20) );
             accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -606,12 +833,22 @@ int main( )
 
             std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
             accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -623,12 +860,16 @@ int main( )
                                                            basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
-            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -636,8 +877,7 @@ int main( )
             accelerationMap[ "Obelix" ] = accelerationsOfSats;
 
             std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< AccelerationSettings >(
-                                                          basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
             accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
@@ -646,6 +886,14 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -663,6 +911,12 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -670,15 +924,21 @@ int main( )
             accelerationMap[ "Obelix" ] = accelerationsOfSats;
 
             std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 10, 10 ) );
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
             accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
@@ -696,6 +956,377 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 18:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 19:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 20:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 21:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 22:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 23:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< AccelerationSettings >(
+                                                          basic_astrodynamics::central_gravity) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 24:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::cannon_ball_radiation_pressure ) );
+
+            accelerationMap[ "Asterix" ] = accelerationsOfSats;
+            accelerationMap[ "Obelix" ] = accelerationsOfSats;
+
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
+            accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 10, 10 ) );
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
+            accelerationMap[ "Moon" ] = accelerationsOfMoon;
+            break;
+        }
+        case 25:{
+            // Define propagation settings.
+            std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
+            accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+            accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                           basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats["Saturn"].push_back( std::make_shared< AccelerationSettings> (
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Neptune"].push_back( std::make_shared< AccelerationSettings> (
+                                                          basic_astrodynamics::central_gravity));
+            accelerationsOfSats["Uranus"].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
             accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
@@ -712,10 +1343,17 @@ int main( )
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Neptune" ].push_back( std::make_shared< AccelerationSettings> (
+                                                           basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Uranus" ].push_back( std::make_shared< AccelerationSettings >(
+                                                         basic_astrodynamics::central_gravity));
+            accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings> (
+                                                        basic_astrodynamics::cannon_ball_radiation_pressure));
             accelerationMap[ "Moon" ] = accelerationsOfMoon;
             break;
         }
-
         }
 
 
@@ -763,10 +1401,10 @@ int main( )
                 std::make_shared< TranslationalStatePropagatorSettings< double > >
                 ( centralBodies, accelerationModelMap, bodiesToPropagate, systemInitialState, simulationEndEpoch );
 
-        const double minimumStepSize = 0.1;
-        const double maximumStepSize = 24*3600;
-        const double relativeErrorTolerance = 1E-10;
-        const double absoluteErrorTolerance = 1E-10;
+//        const double minimumStepSize = 0.1;
+//        const double maximumStepSize = 24*3600;
+//        const double relativeErrorTolerance = 1E-10;
+//        const double absoluteErrorTolerance = 1E-10;
         //std::shared_ptr< RungeKuttaVariableStepSizeSettings<> > integratorSettings =
         //        std::make_shared< RungeKuttaVariableStepSizeSettings <> >
         //        ( 0.0, 10, RungeKuttaCoefficients::rungeKuttaFehlberg56,minimumStepSize,maximumStepSize,
@@ -792,11 +1430,11 @@ int main( )
 
         std::string outputSubFolder = "PerturbationAnalysis/";
 
-        std::cout << "Finished simulation run " << std::to_string(i+1) << " of total runs" << std::to_string(numcases) << std::endl;
+        std::cout << "Finished simulation run " << std::to_string(i+1) << " of " << std::to_string(numcases) << std::endl;
 
         // Write perturbed satellite propagation history to file.
         input_output::writeDataMapToTextFile( integrationResult,
-                                              "propagationHistory"+nameAttach+".dat",
+                                              "propagationHistory"+nameAttach + attachment +".dat",
                                               tudat_applications::getOutputPath( ) + outputSubFolder,
                                               "",
                                               std::numeric_limits< double >::digits10,

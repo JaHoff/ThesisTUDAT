@@ -185,3 +185,8 @@ target_link_libraries(application_L4test ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_
 add_executable(T_perturbationAnalysis "${SRCROOT}/T_PerturbationAnalysis.cpp")
 setup_executable_target(T_perturbationAnalysis "${SRCROOT}")
 target_link_libraries(T_perturbationAnalysis ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES}  )
+
+# Add pointing alternation analysis
+add_executable(T_pointingAlternation "${SRCROOT}/T_PointingAlternation.cpp")
+setup_executable_target(T_pointingAlternation "${SRCROOT}")
+target_link_libraries(T_pointingAlternation ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )

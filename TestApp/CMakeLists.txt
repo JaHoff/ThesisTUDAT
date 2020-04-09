@@ -171,6 +171,11 @@ endif( )
 
 include(tudatLinkLibraries)
 
+# Add default model settings
+add_executable(T_defaultModel "${SRCROOT}/T_DefaultModel.cpp")
+setup_executable_target(T_defaultModel "${SRCROOT}")
+target_link_libraries(T_defaultModel ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
 # Add test application.
 add_executable(application_TestApp "${SRCROOT}/TestApp.cpp")
 setup_executable_target(application_TestApp "${SRCROOT}")
@@ -190,3 +195,13 @@ target_link_libraries(T_perturbationAnalysis ${TUDAT_PROPAGATION_LIBRARIES} ${Bo
 add_executable(T_pointingAlternation "${SRCROOT}/T_PointingAlternation.cpp")
 setup_executable_target(T_pointingAlternation "${SRCROOT}")
 target_link_libraries(T_pointingAlternation ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
+# Add integrator settings
+add_executable(T_integratorSettings "${SRCROOT}/T_IntegratorSettings.cpp")
+setup_executable_target(T_integratorSettings "${SRCROOT}")
+target_link_libraries(T_integratorSettings ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
+# Add integrator settings
+add_executable(T_integratorAnalysis "${SRCROOT}/T_IntegratorAnalysis.cpp")
+setup_executable_target(T_integratorAnalysis "${SRCROOT}")
+target_link_libraries(T_integratorAnalysis ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )

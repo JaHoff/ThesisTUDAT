@@ -31,9 +31,7 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////     CREATE ENVIRONMENT AND VEHICLE       //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // Save name settings
 
-    const string attachment = "_365d";
 
     // Load Spice kernels.
     //const string kernelfile = input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp";
@@ -43,7 +41,8 @@ int main( )
 
     // Set simulation time settings.
     const double simulationStartEpoch = 30*tudat::physical_constants::JULIAN_YEAR; // 2030 start date
-    const double simulationEndEpoch = simulationStartEpoch + 365*tudat::physical_constants::JULIAN_DAY;
+    const double simulationEndEpoch = simulationStartEpoch +  1*tudat::physical_constants::JULIAN_YEAR; //
+    const double timestep = 30*60;
 
     // Define body settings for simulation.
     std::vector< std::string > bodiesToCreate;
@@ -59,7 +58,7 @@ int main( )
 
     // Create body objects.
     std::map< std::string, std::shared_ptr< BodySettings > > bodySettings =
-            getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 300.0, simulationEndEpoch + 300.0 );
+            getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 3*timestep, simulationEndEpoch + 3*timestep );
     for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
@@ -79,7 +78,7 @@ int main( )
 
     // Create radiation pressure settings
     double referenceAreaRadiation = 0.3416;
-    double radiationPressureCoefficient = 1.2;
+    double radiationPressureCoefficient = 1.1421;
     std::vector< std::string > occultingBodies;
     occultingBodies.push_back( "Earth" );
     std::shared_ptr< RadiationPressureInterfaceSettings > asterixRadiationPressureSettings =
@@ -125,7 +124,7 @@ int main( )
     bodiesToPropagate.push_back("Moon");
     centralBodies.push_back("Earth");
 
-    const int numcases = 23;
+    const int numcases = 25;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////                   CASES                  //////////////////////////////////////////////////////
@@ -860,6 +859,8 @@ int main( )
                                                            basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
+            accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+                                                             basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfSats[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
@@ -880,8 +881,6 @@ int main( )
             accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
             accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                            basic_astrodynamics::central_gravity ) );
-            accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                             basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                              basic_astrodynamics::central_gravity ) );
             accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
@@ -1382,9 +1381,13 @@ int main( )
         obelixInitialState.segment(0,3) = L4Cart;
         obelixInitialState.segment(3,3) = L4initVelocity + displaceVelocity;
 
+
+        // Save name settings
+        const string attachment = "_30km";
+
         Eigen::Vector6d asterixDisplacement = Eigen::Vector6d();
-        asterixDisplacement(0) = 100;
-        asterixDisplacement(1) = 1e3;
+        asterixDisplacement(0) = 30e3; // 1: 100
+        asterixDisplacement(1) = 0e3; // 1: 1e3
 
         Eigen::Vector6d asterixInitialState = Eigen::Vector6d();
         asterixInitialState.segment(0,3) = L4Cart + asterixDisplacement.segment(0,3);
@@ -1410,10 +1413,9 @@ int main( )
         //        ( 0.0, 10, RungeKuttaCoefficients::rungeKuttaFehlberg56,minimumStepSize,maximumStepSize,
         //          relativeErrorTolerance, absoluteErrorTolerance);
 
-        const double fixedStepSize = 60*30.0;
         std::shared_ptr< IntegratorSettings< > > integratorSettings =
                 std::make_shared< IntegratorSettings< > >
-                ( rungeKutta4, 0.0, fixedStepSize );
+                ( rungeKutta4, simulationStartEpoch, timestep );
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1430,7 +1432,7 @@ int main( )
 
         std::string outputSubFolder = "PerturbationAnalysis/";
 
-        std::cout << "Finished simulation run " << std::to_string(i+1) << " of " << std::to_string(numcases) << std::endl;
+        std::cout << "Finished simulation run " << std::to_string(i) << " of " << std::to_string(numcases) << std::endl;
 
         // Write perturbed satellite propagation history to file.
         input_output::writeDataMapToTextFile( integrationResult,

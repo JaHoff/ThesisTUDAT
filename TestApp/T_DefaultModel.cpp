@@ -51,6 +51,7 @@ int main( )
     bodiesToCreate.push_back( "Sun" );
     bodiesToCreate.push_back( "Earth" );
     bodiesToCreate.push_back( "Moon" );
+    bodiesToCreate.push_back( "Mercury" );
     bodiesToCreate.push_back( "Mars" );
     bodiesToCreate.push_back( "Venus" );
     bodiesToCreate.push_back("Jupiter");
@@ -92,19 +93,6 @@ int main( )
     bodyMap[ "Obelix" ]->setRadiationPressureInterface(
                 "Sun", createRadiationPressureInterface(
                     asterixRadiationPressureSettings, "Obelix", bodyMap));
-
-    // Create radiation pressure settings
-    referenceAreaRadiation = tudat::mathematical_constants::PI * (1734E3)*(1734E3);
-    radiationPressureCoefficient = 1.14; // Moon albedo is about 0.14 - wiki
-    std::shared_ptr< RadiationPressureInterfaceSettings > moonRadiationPressureSettings =
-            std::make_shared< CannonBallRadiationPressureInterfaceSettings >(
-                "Sun", referenceAreaRadiation, radiationPressureCoefficient, occultingBodies );
-
-    // Create and set radiation pressure settings
-    bodyMap[ "Moon" ]->setRadiationPressureInterface(
-                "Sun", createRadiationPressureInterface(
-                    moonRadiationPressureSettings, "Moon", bodyMap ));
-
     // Finalize body creation.
     setGlobalFrameBodyEphemerides( bodyMap, "SSB", "J2000" );
 
@@ -121,18 +109,15 @@ int main( )
     centralBodies.push_back( "Earth" );
     bodiesToPropagate.push_back("Obelix");
     centralBodies.push_back("Earth");
-    bodiesToPropagate.push_back("Moon");
-    centralBodies.push_back("Earth");
 
 
     // Define propagation settings.
     std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-    accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+    accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 6, 6 ) );
     accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                    basic_astrodynamics::central_gravity ) );
-    accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+    accelerationsOfSats[ "Moon" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 6, 6 )  );
+    accelerationsOfSats[ "Mercury" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::central_gravity ) );
     accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::central_gravity ) );
@@ -145,21 +130,6 @@ int main( )
 
     accelerationMap[ "Asterix" ] = accelerationsOfSats;
     accelerationMap[ "Obelix" ] = accelerationsOfSats;
-
-    std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-    accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-    accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                   basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
-                                                   basic_astrodynamics::central_gravity));
-    accelerationMap[ "Moon" ] = accelerationsOfMoon;
-
 
     basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
                 bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
@@ -194,10 +164,10 @@ int main( )
 
 
     // Set initial state
-    Eigen::VectorXd systemInitialState = Eigen::VectorXd( 18 );
+    Eigen::VectorXd systemInitialState = Eigen::VectorXd( 12 );
     systemInitialState.segment( 0, 6 ) = asterixInitialState;
     systemInitialState.segment( 6, 6 ) = obelixInitialState;
-    systemInitialState.segment(12,6) = moonInitialState;
+
 
     std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             std::make_shared< TranslationalStatePropagatorSettings< double > >

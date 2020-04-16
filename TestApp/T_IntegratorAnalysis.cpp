@@ -103,6 +103,7 @@ int main( )
     std::vector< unsigned int > numberOfFunctionEvaluations;
     std::vector< double > totalPropagationTime;
     std::vector< string > labels;
+
     // Load Spice kernels.
     //const string kernelfile = input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp";
     std::vector< std::string > kernelfile;
@@ -112,7 +113,7 @@ int main( )
     // Set simulation time settings.
     const double simulationDuration = 365*tudat::physical_constants::JULIAN_DAY;
     const double simulationStartEpoch = 30*tudat::physical_constants::JULIAN_YEAR; // 2030 start date
-    const double simulationEndEpoch = simulationStartEpoch +  simulationDuration; //
+    const double simulationEndEpoch = simulationStartEpoch + simulationDuration; //
     double timestep = 30*60;
 
     // interpolation settings
@@ -125,6 +126,7 @@ int main( )
     bodiesToCreate.push_back( "Sun" );
     bodiesToCreate.push_back( "Earth" );
     bodiesToCreate.push_back( "Moon" );
+    bodiesToCreate.push_back( "Mercury" );
     bodiesToCreate.push_back( "Mars" );
     bodiesToCreate.push_back( "Venus" );
     bodiesToCreate.push_back("Jupiter");
@@ -166,19 +168,6 @@ int main( )
     bodyMap[ "Obelix" ]->setRadiationPressureInterface(
                 "Sun", createRadiationPressureInterface(
                     asterixRadiationPressureSettings, "Obelix", bodyMap));
-
-    // Create radiation pressure settings
-    referenceAreaRadiation = tudat::mathematical_constants::PI * (1734E3)*(1734E3);
-    radiationPressureCoefficient = 1.14; // Moon albedo is about 0.14 - wiki
-    std::shared_ptr< RadiationPressureInterfaceSettings > moonRadiationPressureSettings =
-            std::make_shared< CannonBallRadiationPressureInterfaceSettings >(
-                "Sun", referenceAreaRadiation, radiationPressureCoefficient, occultingBodies );
-
-    // Create and set radiation pressure settings
-    bodyMap[ "Moon" ]->setRadiationPressureInterface(
-                "Sun", createRadiationPressureInterface(
-                    moonRadiationPressureSettings, "Moon", bodyMap ));
-
     // Finalize body creation.
     setGlobalFrameBodyEphemerides( bodyMap, "SSB", "J2000" );
 
@@ -195,18 +184,15 @@ int main( )
     centralBodies.push_back( "Earth" );
     bodiesToPropagate.push_back("Obelix");
     centralBodies.push_back("Earth");
-    bodiesToPropagate.push_back("Moon");
-    centralBodies.push_back("Earth");
 
 
     // Define propagation settings.
     std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
-    accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
+    accelerationsOfSats[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 6, 6 ) );
     accelerationsOfSats[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                    basic_astrodynamics::central_gravity ) );
-    accelerationsOfSats[ "Moon" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfSats[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
+    accelerationsOfSats[ "Moon" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 6, 6 )  );
+    accelerationsOfSats[ "Mercury" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::central_gravity ) );
     accelerationsOfSats[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
                                                      basic_astrodynamics::central_gravity ) );
@@ -219,21 +205,6 @@ int main( )
 
     accelerationMap[ "Asterix" ] = accelerationsOfSats;
     accelerationMap[ "Obelix" ] = accelerationsOfSats;
-
-    std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-    accelerationsOfMoon[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-    accelerationsOfMoon[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                   basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Jupiter" ].push_back( std::make_shared< AccelerationSettings >(
-                                                     basic_astrodynamics::central_gravity ) );
-    accelerationsOfMoon[ "Saturn" ].push_back( std::make_shared< AccelerationSettings> (
-                                                   basic_astrodynamics::central_gravity));
-    accelerationMap[ "Moon" ] = accelerationsOfMoon;
-
 
     basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
                 bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
@@ -259,8 +230,8 @@ int main( )
     obelixInitialState.segment(3,3) = L4initVelocity + displaceVelocity;
 
     Eigen::Vector6d asterixDisplacement = Eigen::Vector6d();
-    asterixDisplacement(0) = 10e3; // 1: 100
-    asterixDisplacement(1) = 0e3; // 1: 1e3
+    asterixDisplacement(0) = 100e3; // 1: 100
+    asterixDisplacement(1) = 0; // 1: 1e3
 
     Eigen::Vector6d asterixInitialState = Eigen::Vector6d();
     asterixInitialState.segment(0,3) = L4Cart + asterixDisplacement.segment(0,3);
@@ -268,10 +239,9 @@ int main( )
 
 
     // Set initial state
-    Eigen::VectorXd systemInitialState = Eigen::VectorXd( 18 );
+    Eigen::VectorXd systemInitialState = Eigen::VectorXd( 12 );
     systemInitialState.segment( 0, 6 ) = asterixInitialState;
     systemInitialState.segment( 6, 6 ) = obelixInitialState;
-    systemInitialState.segment(12,6) = moonInitialState;
 
 
     std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
@@ -309,7 +279,7 @@ int main( )
     for (int i =0; i <= 9; i++){
 
         std::cout << "Starting run " + std::to_string(i) + " out of 9" << std::endl;
-        double minimumStepSize = 0.1;
+        double minimumStepSize = 1; // 0.1? Caused ABM to hang. Alternatively use a terminationCondition on CPU time (300s?)
         double maximumStepSize = 24*3600;
         double relativeErrorTolerance = 1E-10;
         double absoluteErrorTolerance = 1E-10;
@@ -519,8 +489,8 @@ int main( )
     tudat::input_output::writeMatrixToFile( utilities::convertStlVectorToEigenVector( totalPropagationTime ),
                        "propagationTime"+attachment+".dat", 16, getOutputPath( "IntegratorAnalysis/" ) );
 
-    tudat::input_output::writeMatrixToFile( utilities::convertStlVectorToEigenVector( labels ),
-                       "propagationTime"+attachment+".dat", 16, getOutputPath( "IntegratorAnalysis/" ) );
+    //tudat::input_output::writeMatrixToFile( utilities::convertStlVectorToEigenVector( labels ),
+    //                   "propagationTime"+attachment+".dat", 16, getOutputPath( "IntegratorAnalysis/" ) );
     // Final statement.
     // The exit code EXIT_SUCCESS indicates that the program was successfully executed.
     return EXIT_SUCCESS;

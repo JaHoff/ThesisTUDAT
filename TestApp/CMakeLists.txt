@@ -205,3 +205,13 @@ target_link_libraries(T_integratorSettings ${TUDAT_PROPAGATION_LIBRARIES} ${Boos
 add_executable(T_integratorAnalysis "${SRCROOT}/T_IntegratorAnalysis.cpp")
 setup_executable_target(T_integratorAnalysis "${SRCROOT}")
 target_link_libraries(T_integratorAnalysis ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
+# PA without moon propagation
+add_executable(T_perturbationAnalysis_nomoon "${SRCROOT}/T_PerturbationAnalysis_simple_nomoonprop.cpp")
+setup_executable_target(T_perturbationAnalysis_nomoon "${SRCROOT}")
+target_link_libraries(T_perturbationAnalysis_nomoon ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
+# PA for harmonic effect analysis
+add_executable(T_perturbationAnalysis_SH "${SRCROOT}/T_PerturbationAnalysis_simple_SHmodels.cpp")
+setup_executable_target(T_perturbationAnalysis_SH "${SRCROOT}")
+target_link_libraries(T_perturbationAnalysis_SH ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )

@@ -34,7 +34,6 @@ int main( )
 
 
     // Load Spice kernels.
-    //const string kernelfile = input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp";
     std::vector< std::string > kernelfile;
     kernelfile.push_back(input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp");
     spice_interface::loadStandardSpiceKernels(kernelfile);
@@ -49,22 +48,47 @@ int main( )
     bodiesToCreate.push_back( "Sun" );
     bodiesToCreate.push_back( "Earth" );
     bodiesToCreate.push_back( "Moon" );
-    bodiesToCreate.push_back( "Mars" );
+    bodiesToCreate.push_back("Mercury");
     bodiesToCreate.push_back( "Venus" );
+    bodiesToCreate.push_back( "Mars" );    
     bodiesToCreate.push_back("Jupiter");
     bodiesToCreate.push_back("Saturn");
     bodiesToCreate.push_back("Neptune");
     bodiesToCreate.push_back("Uranus");
 
+    std::vector< std::string> planetsToPropagate;
+    planetsToPropagate.push_back( "Mercury");
+    planetsToPropagate.push_back( "Venus" );
+    planetsToPropagate.push_back( "Earth" );
+    planetsToPropagate.push_back( "Mars" );
+    planetsToPropagate.push_back("Jupiter");
+    planetsToPropagate.push_back("Neptune");
+    planetsToPropagate.push_back("Uranus");
+    planetsToPropagate.push_back("Saturn");
+
+    std::vector< std::string> planetCentralBodies;
+    planetCentralBodies.push_back( "Sun" );
+    planetCentralBodies.push_back( "Sun" );
+    planetCentralBodies.push_back( "Sun" );
+    planetCentralBodies.push_back( "Sun" );
+    planetCentralBodies.push_back( "Sun");
+    planetCentralBodies.push_back( "Sun");
+    planetCentralBodies.push_back( "Sun");
+    planetCentralBodies.push_back( "Sun");
+
     // Create body objects.
     std::map< std::string, std::shared_ptr< BodySettings > > bodySettings =
             getDefaultBodySettings( bodiesToCreate, simulationStartEpoch - 3*timestep, simulationEndEpoch + 3*timestep );
+
     for( unsigned int i = 0; i < bodiesToCreate.size( ); i++ )
     {
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
     }
+
+
     NamedBodyMap bodyMap = createBodies( bodySettings );
+    NamedBodyMap bodyMapPlanets = bodyMap;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             CREATE VEHICLES           /////////////////////////////////////////////////////////
@@ -123,6 +147,28 @@ int main( )
     centralBodies.push_back("Earth");
     bodiesToPropagate.push_back("Moon");
     centralBodies.push_back("Earth");
+
+    // Other solar system bodies
+    bodiesToPropagate.push_back("Venus");
+    centralBodies.push_back("Sun");
+    bodiesToPropagate.push_back("Earth");
+    centralBodies.push_back("Sun");
+    bodiesToPropagate.push_back("Mars");
+    centralBodies.push_back("Sun");
+    bodiesToPropagate.push_back("Jupiter");
+    centralBodies.push_back("Sun");
+    bodiesToPropagate.push_back("Neptune");
+    centralBodies.push_back("Sun");
+    bodiesToPropagate.push_back("Uranus");
+    centralBodies.push_back("Sun");
+    bodiesToPropagate.push_back("Saturn");
+    centralBodies.push_back("Sun");
+
+    // Planet accelerations
+    std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfPlanets;
+    accelerationsOfPlanets[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
+                                                   basic_astrodynamics::central_gravity ) );
+
 
     const int numcases = 25;
 
@@ -1357,6 +1403,14 @@ int main( )
 
 
 
+        accelerationMap["Venus"] = accelerationsOfPlanets;
+        accelerationMap["Earth"] = accelerationsOfPlanets;
+        accelerationMap["Mars"] = accelerationsOfPlanets;
+        accelerationMap["Jupiter"] = accelerationsOfPlanets;
+        accelerationMap["Neptune"] = accelerationsOfPlanets;
+        accelerationMap["Uranus"] = accelerationsOfPlanets;
+        accelerationMap["Saturn"] = accelerationsOfPlanets;
+
 
         basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
                     bodyMap, accelerationMap, bodiesToPropagate, centralBodies );
@@ -1373,7 +1427,6 @@ int main( )
         Eigen::Vector3d L4dir = -earthMoonVector.cross(moonMomentum);
         Eigen::Vector3d L4Cart = 0.5*earthMoonVector + 0.5*sqrt(3)*earthMoonVector.norm()*L4dir.normalized();
 
-
         Eigen::Vector3d L4initVelocity = -L4Cart.cross(moonMomentum).normalized() * moonVelocity.norm();
         Eigen::Vector3d displaceVelocity = moonMomentum.normalized() * 11;
 
@@ -1383,22 +1436,32 @@ int main( )
 
 
         // Save name settings
-        const string attachment = "_30km";
+        const string attachment = "_10km_fp";
 
         Eigen::Vector6d asterixDisplacement = Eigen::Vector6d();
-        asterixDisplacement(0) = 30e3; // 1: 100
+        asterixDisplacement(0) = 10e3; // 1: 100
         asterixDisplacement(1) = 0e3; // 1: 1e3
 
         Eigen::Vector6d asterixInitialState = Eigen::Vector6d();
         asterixInitialState.segment(0,3) = L4Cart + asterixDisplacement.segment(0,3);
         asterixInitialState.segment(3,3) = L4initVelocity + displaceVelocity;
 
-
         // Set initial state
-        Eigen::VectorXd systemInitialState = Eigen::VectorXd( 18 );
+        Eigen::VectorXd systemInitialState = Eigen::VectorXd(60);
+
+//        systemInitialState = tudat::propagators::getInitialStatesOfBodies(
+//                    bodiesToPropagate, centralBodies, bodyMap, simulationStartEpoch );
         systemInitialState.segment( 0, 6 ) = asterixInitialState;
         systemInitialState.segment( 6, 6 ) = obelixInitialState;
-        systemInitialState.segment(12,6) = moonInitialState;
+        systemInitialState.segment( 12, 6 ) = moonInitialState;
+        systemInitialState.segment( 18, 6 ) =  getInitialStateOfBody("Venus", "Sun", bodyMap, simulationStartEpoch);
+        systemInitialState.segment( 24, 6 ) =  getInitialStateOfBody("Earth", "Sun", bodyMap, simulationStartEpoch);
+        systemInitialState.segment( 30, 6 ) =  getInitialStateOfBody("Mars", "Sun", bodyMap, simulationStartEpoch);
+        systemInitialState.segment( 36, 6 ) =  getInitialStateOfBody("Jupiter", "Sun", bodyMap, simulationStartEpoch);
+        systemInitialState.segment( 42, 6 ) =  getInitialStateOfBody("Neptune", "Sun", bodyMap, simulationStartEpoch);
+        systemInitialState.segment( 48, 6 ) =  getInitialStateOfBody("Uranus", "Sun", bodyMap, simulationStartEpoch);
+        systemInitialState.segment( 54, 6 ) =  getInitialStateOfBody("Saturn", "Sun", bodyMap, simulationStartEpoch);
+
 
         std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
                 std::make_shared< TranslationalStatePropagatorSettings< double > >
@@ -1425,7 +1488,15 @@ int main( )
         SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap, integratorSettings, propagatorSettings );
         std::map< double, Eigen::VectorXd > integrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution();
 
+        std::vector< std::map< double, Eigen::VectorXd > > integrationResultReduced;
+        integrationResultReduced.resize( 2 );
+        for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = integrationResult.begin( );
+              stateIterator != integrationResult.end( ); stateIterator++ )
+        {
 
+            integrationResultReduced[ 0 ][ stateIterator->first ] = stateIterator->second.segment( 0, 18 );
+
+        }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////        PROVIDE OUTPUT TO CONSOLE AND FILES           //////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1435,8 +1506,17 @@ int main( )
         std::cout << "Finished simulation run " << std::to_string(i) << " of " << std::to_string(numcases) << std::endl;
 
         // Write perturbed satellite propagation history to file.
-        input_output::writeDataMapToTextFile( integrationResult,
+        input_output::writeDataMapToTextFile( integrationResultReduced[0],
                                               "propagationHistory"+nameAttach + attachment +".dat",
+                                              tudat_applications::getOutputPath( ) + outputSubFolder,
+                                              "",
+                                              std::numeric_limits< double >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
+
+        // Write perturbed satellite propagation history to file.
+        input_output::writeDataMapToTextFile( integrationResult,
+                                              "FullpropagationHistory"+nameAttach + attachment +".dat",
                                               tudat_applications::getOutputPath( ) + outputSubFolder,
                                               "",
                                               std::numeric_limits< double >::digits10,

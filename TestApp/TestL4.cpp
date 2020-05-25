@@ -173,7 +173,7 @@ int main( )
     //            obelixInitialStateInKeplerianElements, earthGravitationalParameter );
 
 
-    Eigen::Vector3d earthMoonVector = bodyMap["Moon"]->getPosition(); bodyMap["Moon"]->get
+    Eigen::Vector3d earthMoonVector = bodyMap["Moon"]->getPosition();
     Eigen::Vector3d moonVelocity = bodyMap["Moon"]->getVelocity();
     Eigen::Vector3d moonMomentum = earthMoonVector.cross(moonVelocity);
     Eigen::Vector3d L4dir = earthMoonVector.cross(moonMomentum);

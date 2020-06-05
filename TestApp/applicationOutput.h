@@ -29,7 +29,9 @@ static inline std::string getOutputPath( const std::string& extraDirectory = "" 
 
     return outputPath;
 }
-
 }
+
+
+
 
 #endif // TUDAT_APPLICATIONOUTPUT_H

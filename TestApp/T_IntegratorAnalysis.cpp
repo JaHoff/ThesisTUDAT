@@ -59,15 +59,6 @@ void InterpolateAndSave(std::map< double, Eigen::VectorXd > integrationResult, s
                                           std::numeric_limits< double >::digits10,
                                           std::numeric_limits< double >::digits10,
                                           "," );
-
-//    // Write perturbed satellite propagation history to file.
-//    input_output::writeDataMapToTextFile( statemap,
-//                                          "original_"+ name + ".dat",
-//                                          tudat_applications::getOutputPath( ) + outputSubFolder ,
-//                                          "",
-//                                          std::numeric_limits< double >::digits10,
-//                                          std::numeric_limits< double >::digits10,
-//                                          "," );
 }
 
 //! Place two satellites in a halo orbit around L4, using a variable time-step propagator

@@ -215,3 +215,8 @@ target_link_libraries(T_perturbationAnalysis_nomoon ${TUDAT_PROPAGATION_LIBRARIE
 add_executable(T_perturbationAnalysis_SH "${SRCROOT}/T_PerturbationAnalysis_simple_SHmodels.cpp")
 setup_executable_target(T_perturbationAnalysis_SH "${SRCROOT}")
 target_link_libraries(T_perturbationAnalysis_SH ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )
+
+# cost Function mapping
+add_executable(T_costFunctionMapping "${SRCROOT}/T_costFunctionMapping.cpp")
+setup_executable_target(T_costFunctionMapping "${SRCROOT}")
+target_link_libraries(T_costFunctionMapping ${TUDAT_PROPAGATION_LIBRARIES} ${Boost_LIBRARIES} )

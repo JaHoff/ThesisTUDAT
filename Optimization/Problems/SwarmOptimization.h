@@ -17,6 +17,9 @@
 #include <utility>
 #include <vector>
 
+#include <boost/python.hpp>
+#include <cstdlib>
+
 using namespace tudat;
 
 // Define the problem PaGMO-style
@@ -85,6 +88,10 @@ struct SwarmOptimization {
         return InterpolateData(newmap,interpolationTime_);
     }
 
+    std::vector<double> getPenalizedBaselineHistory(){
+        return penalizedBaselineHistory_;
+    }
+
 
 private:
     // used
@@ -108,6 +115,8 @@ private:
 
     mutable std::map< double, Eigen::VectorXd> interpolatedMap_;
     mutable std::map< double, Eigen::VectorXd> lunarkeplerMap_;
+
+    mutable std::vector<double> penalizedBaselineHistory_;
 
 };
 

@@ -14,7 +14,7 @@
 #include "SwarmOptimization.h"
 
 using namespace tudat;
-
+namespace python = boost::python;
 
 std::map< double, Eigen::VectorXd> SwarmOptimization::InterpolateData(std::map< double, Eigen::VectorXd > integrationResult, double stepsize ) const
 {
@@ -306,12 +306,43 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
                 count++;
                 double baseline = (stateIterator->second.segment(6*i,3) - stateIterator->second.segment(6*(swarmSize_ -1- j),3)).norm();
                 if (baseline > 0 && (baseline > 100e3 || baseline< 500)){ cost++;
+                    penalizedBaselineHistory_.push_back(baseline);
                 //std::cout << "Penalized a baseline with size: " + std::to_string(baseline.norm()) << std::endl;
                 }
             }
         }
 
     }
+
+
+    /* PYTHON BASED FUNCTION LOADING */
+
+    Py_Initialize();
+    // Allow Python to load modules from the current directory.
+    setenv("PYTHONPATH", ".", 1);
+
+
+    namespace python = boost::python;
+      try
+      {
+        // >>> import MyPythonClass
+        python::object my_python_class_module = python::import("TestImporter");
+
+        // >>> dog = MyPythonClass.Dog()
+        python::object dog = my_python_class_module.attr("Dog")();
+
+        // >>> dog.bark("woof");
+        dog.attr("bark")("woof");
+      }
+      catch (const python::error_already_set&)
+      {
+        PyErr_Print();
+        return 1;
+      }
+
+
+
+
 
     //std::cout << "cost function evaluated a total of " << count << " baselines" << std::endl;
     if (cost < bestCost_){

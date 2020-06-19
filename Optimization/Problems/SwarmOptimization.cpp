@@ -297,6 +297,8 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
 
     // Simple cost function; penalize too large or too little baselines
     //std::cout << "Starting cost function" << std::endl;
+
+    std::vector<double> penalizedBaselineHistory;
     double cost = 0.;
     int count = 0;
     for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = integrationResult.begin( );
@@ -306,7 +308,7 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
                 count++;
                 double baseline = (stateIterator->second.segment(6*i,3) - stateIterator->second.segment(6*(swarmSize_ -1- j),3)).norm();
                 if (baseline > 0 && (baseline > 100e3 || baseline< 500)){ cost++;
-                    penalizedBaselineHistory_.push_back(baseline);
+                    penalizedBaselineHistory.push_back(baseline);
                 //std::cout << "Penalized a baseline with size: " + std::to_string(baseline.norm()) << std::endl;
                 }
             }
@@ -349,7 +351,7 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
         std::cout << "Updated bestCost_ to:" << cost << std::endl;
         bestCost_= cost;
         bestStateHistory_ = integrationResult;
-
+        penalizedBaselineHistory_ = penalizedBaselineHistory;
         lunarkeplerMap_ = dynamicsSimulator.getDependentVariableHistory();
         corePosition_ = corePosition;
     }

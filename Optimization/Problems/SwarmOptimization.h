@@ -94,8 +94,10 @@ struct SwarmOptimization {
     }
     std::map<int, double> getPenalizedBaselineHistoryMap(){
         std::map<int,double> map;
-        for (auto const& value: penalizedBaselineHistory_){
-            map.insert(std::pair<int,double>(1,value));
+        int i = 0;
+        for (auto it = penalizedBaselineHistory_.begin(); it != penalizedBaselineHistory_.end(); ++it){
+            map.insert(std::pair<int,double>(i,it[0]));
+            i++;
         }
         return map;
     }

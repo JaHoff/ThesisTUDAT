@@ -73,13 +73,13 @@ int main( )
     std::cout << "Problemize the problem" << std::endl;
     problem prob{ swarmProblem };
 
-    for (int i =0; i < 75; i++){
+    for (int g =0; g < 4; g++){
         auto t1 = std::chrono::high_resolution_clock::now();
-        string namesnip = algo_names_shorthand[i];
+        string namesnip = algo_names_shorthand[g];
 
         // Instantiate a pagmo algorithm
         algorithm algo;
-        switch(i){
+        switch(g){
         case 0:{
             algo = de1220();
         }
@@ -105,6 +105,10 @@ int main( )
 
         island isl{algo, prob, populationSize};
 
+        // Example code, multi threading islands
+
+        island islands[]={ island{algo,prob,populationSize},island{algo,prob,populationSize},island{algo,prob,populationSize},island{algo,prob,populationSize} };
+
         std::map <int, std::vector< double >> fitnessmap;
         std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
         for( int i = 0; i < n_generations; i++ )
@@ -127,7 +131,8 @@ int main( )
 
         auto t2 = std::chrono::high_resolution_clock::now();
         std::cout << "Full optimization of " << n_generations << " generations took " <<
-                     std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count()<< "seconds" << std::endl;
+                     std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count()<< " seconds using " <<
+                     algo_list_names[g] << std::endl;
 
         std::cout << "Best solution found was for cost: " << swarmProblem.getBestCost() << std::endl;
         // Retrieve final Cartesian states for population in last generation, and save final states to a file.

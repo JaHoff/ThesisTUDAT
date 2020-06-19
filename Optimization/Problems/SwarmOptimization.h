@@ -17,8 +17,8 @@
 #include <utility>
 #include <vector>
 
-#include <boost/python.hpp>
-#include <cstdlib>
+//#include <boost/python.hpp>
+//#include <cstdlib>
 
 using namespace tudat;
 
@@ -89,9 +89,16 @@ struct SwarmOptimization {
     }
 
     std::vector<double> getPenalizedBaselineHistory(){
+
         return penalizedBaselineHistory_;
     }
-
+    std::map<int, double> getPenalizedBaselineHistoryMap(){
+        std::map<int,double> map;
+        for (auto const& value: penalizedBaselineHistory_){
+            map.insert(std::pair<int,double>(1,value));
+        }
+        return map;
+    }
 
 private:
     // used

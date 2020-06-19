@@ -14,7 +14,7 @@
 #include "SwarmOptimization.h"
 
 using namespace tudat;
-namespace python = boost::python;
+//namespace python = boost::python;
 
 std::map< double, Eigen::VectorXd> SwarmOptimization::InterpolateData(std::map< double, Eigen::VectorXd > integrationResult, double stepsize ) const
 {
@@ -315,30 +315,30 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
     }
 
 
-    /* PYTHON BASED FUNCTION LOADING */
+//    /* PYTHON BASED FUNCTION LOADING */
 
-    Py_Initialize();
-    // Allow Python to load modules from the current directory.
-    setenv("PYTHONPATH", ".", 1);
+//    Py_Initialize();
+//    // Allow Python to load modules from the current directory.
+//    setenv("PYTHONPATH", ".", 1);
 
 
-    namespace python = boost::python;
-      try
-      {
-        // >>> import MyPythonClass
-        python::object my_python_class_module = python::import("TestImporter");
+//    namespace python = boost::python;
+//      try
+//      {
+//        // >>> import MyPythonClass
+//        python::object my_python_class_module = python::import("TestImporter");
 
-        // >>> dog = MyPythonClass.Dog()
-        python::object dog = my_python_class_module.attr("Dog")();
+//        // >>> dog = MyPythonClass.Dog()
+//        python::object dog = my_python_class_module.attr("Dog")();
 
-        // >>> dog.bark("woof");
-        dog.attr("bark")("woof");
-      }
-      catch (const python::error_already_set&)
-      {
-        PyErr_Print();
-        return 1;
-      }
+//        // >>> dog.bark("woof");
+//        dog.attr("bark")("woof");
+//      }
+//      catch (const python::error_already_set&)
+//      {
+//        PyErr_Print();
+//        return 1;
+//      }
 
 
 

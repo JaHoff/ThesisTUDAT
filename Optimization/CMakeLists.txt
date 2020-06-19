@@ -172,9 +172,19 @@ include(tudatLinkLibraries)
 ## Add problem definition folder
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Problems")
 
+
+add_subdirectory("${PROJECT_SOURCE_DIR}/customlibs/fftw")
+#add_library(fftw3 STATIC "${PROJECT_SOURCE_DIR}/customlibs/fftw/fftw3.h")
+
 # Add default model settings
 add_executable(T_defaultOpt "${SRCROOT}/T_DefaultOpt.cpp")
 setup_executable_target(T_defaultOpt "${SRCROOT}")
 target_link_libraries(T_defaultOpt pagmo swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
+    pthread ${Boost_LIBRARIES})
+
+# Add default model settings
+add_executable(T_costFunctionTransferTester "${SRCROOT}/T_CostFunctionTransferTester.cpp")
+setup_executable_target(T_costFunctionTransferTester "${SRCROOT}")
+target_link_libraries(T_costFunctionTransferTester fftw3 swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
     pthread ${Boost_LIBRARIES})
 

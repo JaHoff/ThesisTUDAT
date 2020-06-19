@@ -15,6 +15,7 @@ set(MY_PAGMO_PROBLEMS_HEADERS
 
 set(MY_PAGMO_PROBLEMS_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/SwarmOptimization.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/CostFunctionWrapper.cpp"
 )
 
 add_library(swarm_optimization_library STATIC ${MY_PAGMO_PROBLEMS_SOURCES} ${MY_PAGMO_PROBLEMS_HEADERS})

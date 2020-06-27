@@ -36,8 +36,9 @@ struct SwarmOptimization {
     std::map< double, Eigen::VectorXd> InterpolateData(std::map< double, Eigen::VectorXd > integrationResult, double stepsize ) const;
 
 
-    // Fitness: takes the value of the RAAN and returns the value of the closest distance from target
+    // Fitness: propagate a candidate orbit and evaluate baseline magnitude and rates
     std::vector<double> fitness(const std::vector<double> &x) const;
+
 
     // Boundaries of the problem set between 0 and (360) degrees
     std::pair<std::vector<double>, std::vector<double>> get_bounds() const;
@@ -75,6 +76,10 @@ struct SwarmOptimization {
         return bestCost_;
     }
 
+    void resetBestCost(){
+        bestCost_ = 1e8;
+    }
+
     std::map< double, Eigen::VectorXd > ComputeLunarOrbit()
     {
         using namespace tudat::orbital_element_conversions;
@@ -102,18 +107,27 @@ struct SwarmOptimization {
         return map;
     }
 
+    void setThreads(int thre){
+        n_threads = thre;
+    }
+
 private:
     // used
     int swarmSize_;
+    int n_threads = 1;
     double simulationStartEpoch_;
     double simulationEndEpoch_;
     double timestep_;
     double interpolationTime_ = 1*3600;
-    mutable double bestCost_;
+    mutable double bestCost_ = 1e8;
 
     mutable Eigen::Vector3d corePosition_;
+    mutable Eigen::Vector3d L4Cart_, moonVelocity_, moonMomentum_;
 
-    std::shared_ptr< propagators::DependentVariableSaveSettings > dependentVariablesToSave_;
+    mutable basic_astrodynamics::AccelerationMap accelerationModelMap_;
+    mutable std::vector< std::string > bodiesToPropagate_,centralBodies_;
+
+    mutable std::shared_ptr< propagators::DependentVariableSaveSettings > dependentVariablesToSave_;
 
     mutable std::map< double, Eigen::VectorXd > previousStateHistory_;
     mutable std::map< double, Eigen::VectorXd > bestStateHistory_;
@@ -126,6 +140,8 @@ private:
     mutable std::map< double, Eigen::VectorXd> lunarkeplerMap_;
 
     mutable std::vector<double> penalizedBaselineHistory_;
+
+
 
 };
 

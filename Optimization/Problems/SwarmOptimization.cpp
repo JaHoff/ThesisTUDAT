@@ -6,12 +6,22 @@
  *    under the terms of the Modified BSD license. You should have received
  *    a copy of the license with this file. If not, please or visit:
  *    http://tudat.tudelft.nl/LICENSE.
+ *
+ *
+ * Implementation by Jurriaan van 't Hoff
+ * Code contains a lot of console output commands that track progress, which are commented out by default.
+ * Recommend decommenting these using find and replace for debugging crashes
  */
+
+
 
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 #include <Tudat/Mathematics/RootFinders/secantRootFinder.h>
 
 #include "SwarmOptimization.h"
+
+#include <thread>
+#include <future>
 
 using namespace tudat;
 //namespace python = boost::python;
@@ -71,16 +81,6 @@ SwarmOptimization::SwarmOptimization(const int swarmSize,
     dependentVariablesToSave_( dependentVariablesToSave )
 {
     //std::cout << "Started constructing the base problem" << std::endl;
-//    using namespace tudat;
-//    using namespace tudat::simulation_setup;
-//    using namespace tudat::propagators;
-//    using namespace tudat::numerical_integrators;
-//    using namespace tudat::basic_astrodynamics;
-//    using namespace tudat::basic_mathematics;
-//    using namespace tudat::orbital_element_conversions;
-//    using namespace tudat::unit_conversions;
-//    using namespace tudat::input_output;
-
     using namespace tudat;
     using namespace tudat::simulation_setup;
     using namespace tudat::propagators;
@@ -90,7 +90,7 @@ SwarmOptimization::SwarmOptimization(const int swarmSize,
     using namespace tudat::gravitation;
     using namespace tudat::numerical_integrators;
 
-    bestCost_ = 1e8;
+    //bestCost_ = 1e8;
 
     // Load Spice kernels.
     //const string kernelfile = input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp";
@@ -152,43 +152,24 @@ SwarmOptimization::SwarmOptimization(const int swarmSize,
     // Finalize body creation.
     setGlobalFrameBodyEphemerides( bodyMap_, "SSB", "J2000" );
 
+    // Could be moved to setup phase to speed up code
+    Eigen::Vector6d moonInitialState = getInitialStateOfBody("Moon", "Earth", bodyMap_, simulationStartEpoch_);
+    Eigen::Vector3d earthMoonVector = moonInitialState.segment(0,3);
+    moonVelocity_ = moonInitialState.segment(3,3);
+
+    moonMomentum_ = earthMoonVector.cross(moonVelocity_);
+    Eigen::Vector3d L4dir = -earthMoonVector.cross(moonMomentum_);
+    L4Cart_ = 0.5*earthMoonVector + 0.5*sqrt(3)*earthMoonVector.norm()*L4dir.normalized();
     //std::cout << "Finalized constructing the base problem" << std::endl;
-}
 
-/*Fitness function, convert the variables to a swarm constellation in orbit and propagate,
-Return the evaluated cost. This will need the inclusion of a Python hook*/
-std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) const
-{
-//    using namespace tudat;
-//    using namespace tudat::simulation_setup;
-//    using namespace tudat::propagators;
-//    using namespace tudat::numerical_integrators;
-//    using namespace tudat::basic_astrodynamics;
-//    using namespace tudat::basic_mathematics;
-//    using namespace tudat::orbital_element_conversions;
-//    using namespace tudat::unit_conversions;
-//    using namespace tudat::input_output;
-
-    //std::cout << "Start evaluating the cost function" << std::endl;
-
-    using namespace tudat;
-    using namespace tudat::simulation_setup;
-    using namespace tudat::propagators;
-    using namespace tudat::numerical_integrators;
-    using namespace tudat::orbital_element_conversions;
-    using namespace tudat::basic_mathematics;
-    using namespace tudat::gravitation;
-    using namespace tudat::numerical_integrators;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            CREATE ACCELERATIONS          //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //std::cout << "Starting fitness function for a problem with " + std::to_string(x.size()) + " variables" << std::endl;
+
     // Define propagator settings variables.
     SelectedAccelerationMap accelerationMap;
-    std::vector< std::string > bodiesToPropagate;
-    std::vector< std::string > centralBodies;
 
     // Define propagation settings.
     std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfSats;
@@ -209,37 +190,50 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
 
     for ( int i =0; i < swarmSize_; i++){
         std::string name = std::to_string(i);
-        bodiesToPropagate.push_back( name );
-        centralBodies.push_back( "Earth" );
+        bodiesToPropagate_.push_back( name );
+        centralBodies_.push_back( "Earth" );
 
         accelerationMap[ name ] = accelerationsOfSats;
     }
 
-    basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
-                bodyMap_, accelerationMap, bodiesToPropagate, centralBodies );
-    //std::cout << "Acceleration map succesfully defined" << std::endl;
+    accelerationModelMap_ = createAccelerationModelsMap(
+                bodyMap_, accelerationMap, bodiesToPropagate_, centralBodies_ );
+
+    //std::cout << "Acceleration model map succesfully defined" << std::endl;
+}
+
+/*Fitness function, convert the variables to a swarm constellation in orbit and propagate,
+Return the evaluated cost. This will need the inclusion of a Python hook*/
+std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) const
+{
+
+    //std::cout << "Starting fitness function for a problem with " + std::to_string(x.size()) + " variables" << std::endl;
+
+    //using namespace tudat;
+    using namespace tudat::simulation_setup;
+    using namespace tudat::propagators;
+    using namespace tudat::numerical_integrators;
+    using namespace tudat::orbital_element_conversions;
+    //using namespace tudat::basic_mathematics;
+    //using namespace tudat::gravitation;
+    //using namespace tudat::numerical_integrators;
+
+
+
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             CREATE PROPAGATION SETTINGS            ////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///
 
-    // Could be moved to setup phase to speed up code
-    Eigen::Vector6d moonInitialState = getInitialStateOfBody("Moon", "Earth", bodyMap_, simulationStartEpoch_);
-    Eigen::Vector3d earthMoonVector = moonInitialState.segment(0,3);
-    Eigen::Vector3d moonVelocity = moonInitialState.segment(3,3);
-
-    Eigen::Vector3d moonMomentum = earthMoonVector.cross(moonVelocity);
-    Eigen::Vector3d L4dir = -earthMoonVector.cross(moonMomentum);
-    Eigen::Vector3d L4Cart = 0.5*earthMoonVector + 0.5*sqrt(3)*earthMoonVector.norm()*L4dir.normalized();
-
-//    std::cout << "L4 position: " << L4Cart << std::endl;
+//    //std::cout << "L4 position: " << L4Cart << std::endl;
     // Displace the core of the swarm based off a variable
     Eigen::Vector3d coreDisplacement = Eigen::Vector3d();
     coreDisplacement(0) = x[0];
     coreDisplacement(1) = x[1];
     coreDisplacement(2) = x[2];
-    Eigen::Vector3d corePosition = L4Cart + coreDisplacement;
+    Eigen::Vector3d corePosition = L4Cart_ + coreDisplacement;
     // Set the swarm velocity based off the core position plus a additionalVelocity variable
-    Eigen::Vector3d stableVelocity = -L4Cart.cross(moonMomentum).normalized() * moonVelocity.norm();
+    Eigen::Vector3d stableVelocity = -L4Cart_.cross(moonMomentum_).normalized() * moonVelocity_.norm();
     Eigen::Vector3d additionalVelocity = {x[3],x[4],x[5]};
 
     // Distribute the initial states of swarm elements around the core:
@@ -266,7 +260,8 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
 
     std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             std::make_shared< TranslationalStatePropagatorSettings< double > >
-            ( centralBodies, accelerationModelMap, bodiesToPropagate, systemInitialState, simulationEndEpoch_,propagators::cowell, dependentVariablesToSave_ );
+            ( centralBodies_, accelerationModelMap_, bodiesToPropagate_, systemInitialState,
+              simulationEndEpoch_,propagators::cowell, dependentVariablesToSave_ );
 
     const double minimumStepSize = 0.01;
     const double maximumStepSize = 24*3600;
@@ -286,70 +281,55 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
     SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap_, integratorSettings, propagatorSettings );
 
     //std::cout << "Fully simulated the satellite motion" << std::endl;
+
     //Retrieve results
     std::map< double, Eigen::VectorXd > integrationResult = InterpolateData(dynamicsSimulator.getEquationsOfMotionNumericalSolution( ),interpolationTime_);
     previousStateHistory_ = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
     previousFinalState_ = previousStateHistory_.rbegin( )->second;
 
-//    previousDependentVariablesFinalValues_ = previousDependentVariablesHistory_.rbegin()->second;
 
     /* COST FUNCTION */
 
     // Simple cost function; penalize too large or too little baselines
-    //std::cout << "Starting cost function" << std::endl;
 
+
+    //std::cout << "Starting cost function" << std::endl;
     std::vector<double> penalizedBaselineHistory;
     double cost = 0.;
     int count = 0;
+    double baseline, baselinerate;
+
+    int bsit1, bsit2, bsrit1, bsrit2;
     for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = integrationResult.begin( );
              stateIterator != integrationResult.end( ); stateIterator++ ){
         for ( int i = 0; i < swarmSize_; i++){
-            for ( int j = 0; j <=  swarmSize_ - i; j++){
+            for ( int j = 0; j <  swarmSize_ -1 -i; j++){
                 count++;
-                double baseline = (stateIterator->second.segment(6*i,3) - stateIterator->second.segment(6*(swarmSize_ -1- j),3)).norm();
-                if (baseline > 0 && (baseline > 100e3 || baseline< 500)){ cost++;
+
+                bsit1 = 6*i;
+                bsit2 = 6*(swarmSize_- j -1);
+                bsrit1 = bsit1 + 3;
+                bsrit2 = bsit2 + 3;
+
+                ////std::cout << "baseline comp will try to access values " << bsit1 << " to " << bsit2 << std::endl;
+                ////std::cout << "baselinerate comp will try to access values " << bsrit1 << " to " << bsrit2 << std::endl;
+                baseline = (stateIterator->second.segment(bsit1,3) - stateIterator->second.segment(bsit2,3)).norm();
+                baselinerate = (stateIterator->second.segment(bsrit1,3) - stateIterator->second.segment(bsrit2,3)).norm();
+                if (baselinerate > 1 || (baseline > 100e3 || baseline< 500)){ cost++;
                     penalizedBaselineHistory.push_back(baseline);
-                //std::cout << "Penalized a baseline with size: " + std::to_string(baseline.norm()) << std::endl;
+                    penalizedBaselineHistory.push_back(baselinerate);
+                //std::cout << "Penalized a baseline with size: " + std::to_string(baseline) << std::endl;
                 }
             }
         }
 
     }
 
-
-//    /* PYTHON BASED FUNCTION LOADING */
-
-//    Py_Initialize();
-//    // Allow Python to load modules from the current directory.
-//    setenv("PYTHONPATH", ".", 1);
-
-
-//    namespace python = boost::python;
-//      try
-//      {
-//        // >>> import MyPythonClass
-//        python::object my_python_class_module = python::import("TestImporter");
-
-//        // >>> dog = MyPythonClass.Dog()
-//        python::object dog = my_python_class_module.attr("Dog")();
-
-//        // >>> dog.bark("woof");
-//        dog.attr("bark")("woof");
-//      }
-//      catch (const python::error_already_set&)
-//      {
-//        PyErr_Print();
-//        return 1;
-//      }
-
-
-
-
-
     //std::cout << "cost function evaluated a total of " << count << " baselines" << std::endl;
     if (cost < bestCost_){
-        std::cout << "Updated bestCost_ to:" << cost << std::endl;
+
         bestCost_= cost;
+        std::cout << "Updated bestCost_ to:" << bestCost_ << std::endl;
         bestStateHistory_ = integrationResult;
         penalizedBaselineHistory_ = penalizedBaselineHistory;
         lunarkeplerMap_ = dynamicsSimulator.getDependentVariableHistory();
@@ -382,5 +362,96 @@ std::pair<std::vector<double>, std::vector<double>> SwarmOptimization::get_bound
     return {lowerbounds,
         upperbounds};
 }
+
+
+
+///* BATCH FITNESS PROCESSOR, IMPLEMENT MULTITHREADING OF FITNESS EVALUATOR HERE */
+//std::vector<double> SwarmOptimization::batch_fitness(const std::vector<double> &x) const
+//{
+//    // input : stacked batch vector of (n_var * n_pop) variables
+//    int n_var = (6+3*swarmSize_);
+//    int n_pop = int((x.size()) / n_var);
+
+//    std::vector<double> costs(x.size());
+//    switch (n_threads){
+//    case 2:{
+//        std::vector<double> res1(n_var),res2(n_var);
+//        for (int i =0 ; i < n_pop; i += 2){
+
+//            // grab vector for thread 1:
+//            auto start_itr = std::next(x.cbegin(),i*n_var);
+//            auto end_itr = std::next(x.cbegin(),(i+1)*n_var);
+//            std::vector<double> select1;
+//            std::copy(start_itr, end_itr, select1.begin());
+
+//            // grab vector for thread 2:
+//            start_itr = std::next(x.cbegin(),(i+1)*n_var);
+//            end_itr = std::next(x.cbegin(),(i+2)*n_var);
+//            std::vector<double> select2;
+//            std::copy(start_itr, end_itr, select2.begin());
+
+
+//            std::packaged_task<std::vector<double> (std::vector<double>)> task(&fitness);
+//            auto future = task.get_future();
+
+//            std::cout << "Start multithreading" << std::endl;
+
+//            //std::promise<std::vector<double>> sel1;
+////            auto s1 = sel1.get_future();
+////            std::thread t1( fitness(select1),1,&res1 );
+//            //std::thread thr1 ( fitness, select1,&res1);
+//            //std::thread thr2 (fitness(select2),2, &res2);
+
+
+//            thr1.join();
+//            thr2.join();
+//            std::cout << "threads synchronized, done!" << std::endl;
+
+//            std::copy(res1.begin(),res1.end(),costs.begin() + i*n_var);
+//            std::copy(res1.begin(),res1.end(),costs.begin() + (i+1)*n_var);
+//            break;
+//        }
+
+
+//    }
+//    default: // singlethreading
+//    {
+//        std::cout << "Starting singlethreading solver" << std::endl;
+//        for (int i =0 ; i < n_pop; i++){
+//            auto start_itr = std::next(x.cbegin(),i*n_var);
+//            auto end_itr = std::next(x.cbegin(),(i+1)*n_var);
+
+//            std::vector<double> select;
+
+//            std::copy(start_itr, end_itr, select.begin());
+
+//            auto result = fitness(select);
+//            std::copy(result.begin(),result.end(),costs.begin() + i*n_var);
+
+//        }
+//    }
+
+//    }
+
+
+//    // Desegment into individual decision vectors
+
+
+//    // multithread solutions
+
+
+
+//    // append solutions in proper order
+
+
+//    // return cost vector
+
+//    //std::cout << "Succesfully computed cost function with cost: " + std::to_string(cost) << std::endl;
+//    return costs;
+
+
+//}
+
+
 
 

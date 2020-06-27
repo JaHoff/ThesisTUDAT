@@ -25,6 +25,9 @@ Base adapted from the propagationTargetingExample included by TUDAT*/
 #include <pagmo/io.hpp>
 #include <pagmo/archipelago.hpp>
 
+//#include <pagmo/bfe.hpp>
+//#include <pagmo/batch_evaluators/default_bfe.hpp>
+
 #include "Problems/SwarmOptimization.h"
 #include "Problems/applicationOutput.h"
 #include "Problems/saveOptimizationResults.h"
@@ -40,14 +43,13 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 75;
+    int n_generations = 5;
     int r_seed = 42;
     std::cout << "General optimization start!" << std::endl;
 
-    std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",
-                                            "Particle Swarm Optimization",
-                                            "Particle Swarm Optimization Generational", "Generational ant colony"};
-    std::vector<std::string> algo_names_shorthand{"de1220", "sade",  "pso", "pso_gen","gaco"};
+    std::vector<std::string> algo_list_names{"Particle Swarm Optimization Generational BFE",
+                                             "Generational Ant Colony BFE"};
+    std::vector<std::string> algo_names_shorthand{ "pso_genbfe","gacobfe"};
 
 
     //Set seed for reproducible results
@@ -74,9 +76,9 @@ int main( )
     std::cout << "Problemize the problem" << std::endl;
     problem prob{ swarmProblem };
 
-    for (int g =0; g < 5; g++){
+    for (int g = 0; g < 1; g++){
         auto t1 = std::chrono::high_resolution_clock::now();
-        string namesnip = algo_names_shorthand[g];
+        string namesnip = algo_names_shorthand[g] + "_sd" + std::to_string(r_seed);
 
         // reset the internal tracker for the best cost
         swarmProblem.resetBestCost();
@@ -85,66 +87,49 @@ int main( )
         algorithm algo;
         switch(g){
         case 0:{
-            algo = de1220();
+            pso_gen psog = pso_gen();
+            psog.set_bfe(bfe());
+            algo = psog;
             break;
         }
         case 1:{
-            algo = sade();
+            gaco genalg = gaco();
+            genalg.set_bfe(bfe());
+            algo = genalg;
             break;
         }
-        case 2:{
-            algo = pso();
-            break;
-        }
-        case 3:{
-            algo = pso_gen();
-            break;
-        }
-        case 4:{
-            algo = gaco();
-            break;
+        default:{
+            std::cout << "invalid case!"<< std::endl;
         }
         }
-
-
-
 
         // Create an island with 128 individuals
-        pagmo::population::size_type populationSize = 128;
+        pagmo::population::size_type populationSize = 32;
 
-        island isl{algo, prob, populationSize};
+        population pops = population(swarmProblem, populationSize);
 
-        // Example code, multi threading islands
 
-        //island islands[]={ island{algo,prob,populationSize},island{algo,prob,populationSize},island{algo,prob,populationSize},island{algo,prob,populationSize} };
 
         std::map <int, std::vector< double >> fitnessmap;
         std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
         int i = 0;
         bool iterate = true;
-        double bestcost = 1e5;
         while( iterate)
         {
             std::cout << "Now at generation " + std::to_string(i) << std::endl;
             i++;
-            isl.evolve( );
-            while( isl.status( ) != pagmo::evolve_status::idle &&
-                   isl.status( ) != pagmo::evolve_status::idle_error )
-            {
-                isl.wait( );
-            }
-            isl.wait_check( ); // Raises errors
 
-            fitnessmap.insert( std::pair<double, std::vector< double > >( i, isl.get_population().get_f().at(0) ) );
+            algo.evolve(pops);
+
+            fitnessmap.insert( std::pair<double, std::vector< double > >( i, pops.get_f().at(0) ) );
             // Write current iteration results to file
 
-            std::vector<vector_double> popsf = isl.get_population().get_f();
-            printPopulationToFile( isl.get_population( ).get_x( ), "swarmPropagation_"+namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , false );
+            std::vector<vector_double> popsf = pops.get_f();
+            printPopulationToFile( pops.get_x( ), "swarmPropagation_"+namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , false );
             printPopulationToFile( popsf, "swarmPropagation_"+namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , true );
 
-            population pops = isl.get_population();
-            bestcost = pops.get_f()[pops.best_idx()][0];
-            std::cout << "generation finished with local best cost of " << bestcost << std::endl;
+            double bestcost = pops.get_f()[pops.best_idx()][0];
+
             if (i > n_generations || bestcost == 0){ iterate = false;}
         }
 
@@ -156,7 +141,7 @@ int main( )
 
         std::cout << "Best solution found was for cost: " << swarmProblem.getBestCost() << std::endl;
         // Retrieve final Cartesian states for population in last generation, and save final states to a file.
-        std::vector<std::vector< double > > decisionVariables = isl.get_population( ).get_x( );
+        std::vector<std::vector< double > > decisionVariables = pops.get_x( );
         std::map< int, Eigen::VectorXd > finalStates;
         for( unsigned int i = 0; i < decisionVariables.size( ); i++ )
         {
@@ -164,12 +149,12 @@ int main( )
             finalStates[ i ] = swarmProblem.getPreviousFinalState( );
         }
         tudat::input_output::writeDataMapToTextFile(
-                    finalStates, "swarmFinalStates_"+namesnip+".dat", swarm_optimization::getOutputPath( ) );
+                    finalStates, "swarmFinalStates_"+namesnip+".dat", swarm_optimization::getOutputPath( ) + "/FineGrain/" );
 
         // Write lunar state history to file.
         input_output::writeDataMapToTextFile( swarmProblem.ComputeLunarOrbit(),
                                               "propagationHistory_moon.dat",
-                                              swarm_optimization::getOutputPath( ),
+                                              swarm_optimization::getOutputPath( ) + "/FineGrain/",
                                               "",
                                               std::numeric_limits< double >::digits10,
                                               std::numeric_limits< double >::digits10,
@@ -178,12 +163,12 @@ int main( )
         // Write core position to file.
         input_output::writeMatrixToFile(swarmProblem.getCorePosition(),
                                         "corePosition_"+namesnip+"_best.dat",10,
-                                        swarm_optimization::getOutputPath( ) ) ;
+                                        swarm_optimization::getOutputPath( ) + "/FineGrain/" ) ;
 
         // Write perturbed satellite propagation history to file.
         input_output::writeDataMapToTextFile( swarmProblem.getBestStateHistory(),
                                               "propagationHistory_"+namesnip+"_best.dat",
-                                              swarm_optimization::getOutputPath( ),
+                                              swarm_optimization::getOutputPath( ) + "/FineGrain/",
                                               "",
                                               std::numeric_limits< double >::digits10,
                                               std::numeric_limits< double >::digits10,
@@ -191,7 +176,7 @@ int main( )
 
         input_output::writeDataMapToTextFile(swarmProblem.getPenalizedBaselineHistoryMap(),
                                               "penaltyHistory_"+namesnip+".dat",
-                                              swarm_optimization::getOutputPath( ),
+                                              swarm_optimization::getOutputPath( ) + "/FineGrain/",
                                               "",
                                               std::numeric_limits< double >::digits10,
                                               std::numeric_limits< double >::digits10,

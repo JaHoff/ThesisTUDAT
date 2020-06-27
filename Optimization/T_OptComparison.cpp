@@ -25,6 +25,9 @@ Base adapted from the propagationTargetingExample included by TUDAT*/
 #include <pagmo/io.hpp>
 #include <pagmo/archipelago.hpp>
 
+#include <pagmo/bfe.hpp>
+#include <pagmo/batch_evaluators/default_bfe.hpp>
+
 #include "Problems/SwarmOptimization.h"
 #include "Problems/applicationOutput.h"
 #include "Problems/saveOptimizationResults.h"
@@ -40,14 +43,17 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 75;
+    int n_generations = 5;
     int r_seed = 42;
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",
                                             "Particle Swarm Optimization",
-                                            "Particle Swarm Optimization Generational", "Generational ant colony"};
-    std::vector<std::string> algo_names_shorthand{"de1220", "sade",  "pso", "pso_gen","gaco"};
+                                            "Particle Swarm Optimization Generational",
+                                             "Particle Swarm Optimization Generational BFE",
+                                             "Generational Ant Colony",
+                                             "Generational Ant Colony BFE"};
+    std::vector<std::string> algo_names_shorthand{"de1220", "sade", "pso", "pso_gen", "pso_genbfe","gaco", "gacobfe"};
 
 
     //Set seed for reproducible results
@@ -74,12 +80,13 @@ int main( )
     std::cout << "Problemize the problem" << std::endl;
     problem prob{ swarmProblem };
 
-    for (int g =0; g < 5; g++){
-        auto t1 = std::chrono::high_resolution_clock::now();
-        string namesnip = algo_names_shorthand[g];
 
-        // reset the internal tracker for the best cost
-        swarmProblem.resetBestCost();
+    // batch fitness eval for supported algorithms
+    bfe _bfe = bfe();
+
+    for (int g =4; g < 6; g++){
+        auto t1 = std::chrono::high_resolution_clock::now();
+        string namesnip = algo_names_shorthand[g] + "_sd" + std::to_string(r_seed);
 
         // Instantiate a pagmo algorithm
         algorithm algo;
@@ -101,16 +108,29 @@ int main( )
             break;
         }
         case 4:{
+            pso_gen psog = pso_gen();
+            psog.set_bfe(_bfe);
+            algo = psog;
+            break;
+        }
+        case 5:{
             algo = gaco();
             break;
         }
+        case 6:{
+            gaco genalg = gaco();
+            genalg.set_bfe(_bfe);
+            algo = genalg;
+            break;
+        }
+        default:{
+            std::cout << "invalid case!"<< std::endl;
+        }
         }
 
-
-
-
         // Create an island with 128 individuals
-        pagmo::population::size_type populationSize = 128;
+        pagmo::population::size_type populationSize = 32;
+
 
         island isl{algo, prob, populationSize};
 
@@ -122,7 +142,6 @@ int main( )
         std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
         int i = 0;
         bool iterate = true;
-        double bestcost = 1e5;
         while( iterate)
         {
             std::cout << "Now at generation " + std::to_string(i) << std::endl;
@@ -143,8 +162,8 @@ int main( )
             printPopulationToFile( popsf, "swarmPropagation_"+namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , true );
 
             population pops = isl.get_population();
-            bestcost = pops.get_f()[pops.best_idx()][0];
-            std::cout << "generation finished with local best cost of " << bestcost << std::endl;
+            double bestcost = pops.get_f()[pops.best_idx()][0];
+
             if (i > n_generations || bestcost == 0){ iterate = false;}
         }
 
@@ -164,12 +183,12 @@ int main( )
             finalStates[ i ] = swarmProblem.getPreviousFinalState( );
         }
         tudat::input_output::writeDataMapToTextFile(
-                    finalStates, "swarmFinalStates_"+namesnip+".dat", swarm_optimization::getOutputPath( ) );
+                    finalStates, "swarmFinalStates_"+namesnip+".dat", swarm_optimization::getOutputPath( ) + "/AlgComparison/" );
 
         // Write lunar state history to file.
         input_output::writeDataMapToTextFile( swarmProblem.ComputeLunarOrbit(),
                                               "propagationHistory_moon.dat",
-                                              swarm_optimization::getOutputPath( ),
+                                              swarm_optimization::getOutputPath( ) + "/AlgComparison/",
                                               "",
                                               std::numeric_limits< double >::digits10,
                                               std::numeric_limits< double >::digits10,
@@ -178,12 +197,12 @@ int main( )
         // Write core position to file.
         input_output::writeMatrixToFile(swarmProblem.getCorePosition(),
                                         "corePosition_"+namesnip+"_best.dat",10,
-                                        swarm_optimization::getOutputPath( ) ) ;
+                                        swarm_optimization::getOutputPath( ) + "/AlgComparison/" ) ;
 
         // Write perturbed satellite propagation history to file.
         input_output::writeDataMapToTextFile( swarmProblem.getBestStateHistory(),
                                               "propagationHistory_"+namesnip+"_best.dat",
-                                              swarm_optimization::getOutputPath( ),
+                                              swarm_optimization::getOutputPath( ) + "/AlgComparison/",
                                               "",
                                               std::numeric_limits< double >::digits10,
                                               std::numeric_limits< double >::digits10,
@@ -191,7 +210,7 @@ int main( )
 
         input_output::writeDataMapToTextFile(swarmProblem.getPenalizedBaselineHistoryMap(),
                                               "penaltyHistory_"+namesnip+".dat",
-                                              swarm_optimization::getOutputPath( ),
+                                              swarm_optimization::getOutputPath( ) + "/AlgComparison/",
                                               "",
                                               std::numeric_limits< double >::digits10,
                                               std::numeric_limits< double >::digits10,

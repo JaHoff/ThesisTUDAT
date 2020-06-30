@@ -43,7 +43,7 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 2;
+    int n_generations = 75;
     int n_pops = 128;
     int r_seed = 42;
     string subfolder = "/AlgComparison/";
@@ -143,9 +143,10 @@ int main( )
             // Write current iteration results to file
 
             std::vector<vector_double> popsf = isl.get_population().get_f();
-            printPopulationToFile( isl.get_population( ).get_x( ), subfolder + "population_"+namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , false );
-            printPopulationToFile( popsf, subfolder + "fitness_"+namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , true );
+            printPopulationToFile( isl.get_population( ).get_x( ), namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , false, subfolder );
+            printPopulationToFile( popsf, namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , true, subfolder );
 
+            std::cout << "printed file: " << namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) << std::endl;
             population pops = isl.get_population();
             double bestcost = pops.get_f()[pops.best_idx()][0];
 

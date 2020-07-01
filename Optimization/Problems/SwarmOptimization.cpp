@@ -24,7 +24,6 @@
 #include <future>
 
 using namespace tudat;
-//namespace python = boost::python;
 
 std::map< double, Eigen::VectorXd> SwarmOptimization::InterpolateData(std::map< double, Eigen::VectorXd > integrationResult, double stepsize ) const
 {
@@ -33,14 +32,13 @@ std::map< double, Eigen::VectorXd> SwarmOptimization::InterpolateData(std::map< 
     //std::cout << "Start interpolating the data to a fixed step size" << std::endl;
     using namespace tudat;
 
-//    std::map<double, Eigen::VectorXd> statemap = integrationResult;
-
     double startTime = simulationStartEpoch_;
     double endTime = simulationEndEpoch_;
 
     //std::cout << "startTime: " + std::to_string(startTime) + "   endTime: " + std::to_string(endTime) << std::endl;
     int N = std::floor((endTime-startTime)/stepsize);
     //std::cout << "Going to interpolate to " + std::to_string(N) + " data points" << std::endl;
+
     // create interpolator
     std::shared_ptr< interpolators::InterpolatorSettings > interpolatorSettings =
             std::make_shared< interpolators::LagrangeInterpolatorSettings >( 8 );
@@ -93,7 +91,6 @@ SwarmOptimization::SwarmOptimization(const int swarmSize,
     //bestCost_ = 1e8;
 
     // Load Spice kernels.
-    //const string kernelfile = input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp";
     std::vector< std::string > kernelfile;
     kernelfile.push_back(input_output::getSpiceKernelPath() + "tudat_merged_edit.bsp");
     spice_interface::loadStandardSpiceKernels(kernelfile);
@@ -121,7 +118,23 @@ SwarmOptimization::SwarmOptimization(const int swarmSize,
     {
         bodySettings[ bodiesToCreate.at( i ) ]->ephemerisSettings->resetFrameOrientation( "J2000" );
         bodySettings[ bodiesToCreate.at( i ) ]->rotationModelSettings->resetOriginalFrame( "J2000" );
+        bodySettings[ bodiesToCreate.at( i )]->ephemerisSettings = std::make_shared< InterpolatedSpiceEphemerisSettings >(
+            simulationStartEpoch_, simulationEndEpoch_, 30*60, "SSB", "J2000" );
+        bodySettings[ bodiesToCreate.at( i )] -> rotationModelSettings = std::make_shared< SimpleRotationModelSettings >(
+                    "J2000", "J2000", spice_interface::computeRotationQuaternionBetweenFrames(
+                        "J2000", "J2000", simulationStartEpoch_ ),
+                    simulationStartEpoch_, 2.0 * mathematical_constants::PI / physical_constants::SIDEREAL_DAY );
     }
+
+    bodySettings[ "Earth" ] -> rotationModelSettings = std::make_shared< SimpleRotationModelSettings >(
+                "J2000", "IAU_Earth", spice_interface::computeRotationQuaternionBetweenFrames(
+                    "J2000", "IAU_Earth", simulationStartEpoch_ ),
+                simulationStartEpoch_, 2.0 * mathematical_constants::PI / physical_constants::SIDEREAL_DAY );
+    bodySettings[ "Moon" ] -> rotationModelSettings = std::make_shared< SimpleRotationModelSettings >(
+                "J2000", "IAU_Moon", spice_interface::computeRotationQuaternionBetweenFrames(
+                    "J2000", "IAU_Moon", simulationStartEpoch_ ),
+                simulationStartEpoch_, 2.0 * mathematical_constants::PI / physical_constants::SIDEREAL_DAY );
+
     bodyMap_ = createBodies( bodySettings );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -200,6 +213,14 @@ SwarmOptimization::SwarmOptimization(const int swarmSize,
                 bodyMap_, accelerationMap, bodiesToPropagate_, centralBodies_ );
 
     //std::cout << "Acceleration model map succesfully defined" << std::endl;
+
+    const double minimumStepSize = 0.01;
+    const double maximumStepSize = 24*3600;
+    const double relativeErrorTolerance = 1E-11;
+    const double absoluteErrorTolerance = 1E-11;
+    integratorSettings_ = std::make_shared< RungeKuttaVariableStepSizeSettings <> >
+                            ( simulationStartEpoch_, 10, RungeKuttaCoefficients::rungeKuttaFehlberg45,minimumStepSize,maximumStepSize,
+                              relativeErrorTolerance, absoluteErrorTolerance);
 }
 
 /*Fitness function, convert the variables to a swarm constellation in orbit and propagate,
@@ -208,17 +229,9 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
 {
 
     //std::cout << "Starting fitness function for a problem with " + std::to_string(x.size()) + " variables" << std::endl;
-
-    //using namespace tudat;
     using namespace tudat::simulation_setup;
     using namespace tudat::propagators;
     using namespace tudat::numerical_integrators;
-    using namespace tudat::orbital_element_conversions;
-    //using namespace tudat::basic_mathematics;
-    //using namespace tudat::gravitation;
-    //using namespace tudat::numerical_integrators;
-
-
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             CREATE PROPAGATION SETTINGS            ////////////////////////////////////////////
@@ -263,14 +276,7 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
             ( centralBodies_, accelerationModelMap_, bodiesToPropagate_, systemInitialState,
               simulationEndEpoch_,propagators::cowell, dependentVariablesToSave_ );
 
-    const double minimumStepSize = 0.01;
-    const double maximumStepSize = 24*3600;
-    const double relativeErrorTolerance = 1E-11;
-    const double absoluteErrorTolerance = 1E-11;
-    std::shared_ptr< RungeKuttaVariableStepSizeSettings<> > integratorSettings =
-            std::make_shared< RungeKuttaVariableStepSizeSettings <> >
-            ( simulationStartEpoch_, 10, RungeKuttaCoefficients::rungeKuttaFehlberg45,minimumStepSize,maximumStepSize,
-              relativeErrorTolerance, absoluteErrorTolerance);
+
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
@@ -278,7 +284,7 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
 
     //std::cout << "Starting propagation from epoch " + std::to_string(simulationStartEpoch_) + " to " + std::to_string(simulationEndEpoch_) << std::endl;
     // Create simulation object and propagate dynamics.
-    SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap_, integratorSettings, propagatorSettings );
+    SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap_, integratorSettings_, propagatorSettings );
 
     //std::cout << "Fully simulated the satellite motion" << std::endl;
 

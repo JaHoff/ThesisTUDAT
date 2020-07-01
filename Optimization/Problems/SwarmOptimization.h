@@ -21,6 +21,7 @@
 //#include <cstdlib>
 
 using namespace tudat;
+using namespace tudat::numerical_integrators;
 
 // Define the problem PaGMO-style
 struct SwarmOptimization {
@@ -141,6 +142,7 @@ private:
 
     mutable std::vector<double> penalizedBaselineHistory_;
 
+    std::shared_ptr< RungeKuttaVariableStepSizeSettings<> > integratorSettings_;
 
 
 };

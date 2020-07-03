@@ -42,13 +42,17 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 75;
-    int n_islands = 8;
+    int n_generations = 50;
+    int n_islands = 4;
     int n_pops = 32;
     int r_seed = 42;
+    int n_sats = 10;
+
+    double missionLength = 160*tudat::physical_constants::JULIAN_DAY;
+
 
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
-    int internalIterations = 0;
+    int internalIterations = 5;
 
     string subfolder = "/Coarse/";
     std::cout << "General optimization start!" << std::endl;
@@ -60,7 +64,10 @@ int main( )
     std::vector<std::string> algo_names_shorthand{"de1220", "sade", "pso", "pso_gen", "gaco"};
 
     int algochoice = 0;
-    string namesnip = algo_names_shorthand.at(algochoice) + "_sd" + std::to_string(r_seed);
+    string namesnip = algo_names_shorthand.at(algochoice) + "_sd" + std::to_string(r_seed) +
+            "_sats" + std::to_string(n_sats) + "_nisl" + std::to_string(n_islands) + "_npop" + std::to_string(n_pops) +
+            "_int" + std::to_string(internalIterations);
+
     //Set seed for reproducible results
     pagmo::random_device::set_seed(r_seed);
 
@@ -71,7 +78,7 @@ int main( )
 
     switch (algochoice){
     case 0:
-        algo = de1220();
+        algo = de1220(internalIterations);
         break;
     default:
         algo = de1220();
@@ -93,8 +100,6 @@ int main( )
             std::make_shared< propagators::DependentVariableSaveSettings >( dependentVariablesList );
 
     std::cout << "Start defining the general optimization problem" << std::endl;
-    int numberOfSatellites = 5;
-    double missionLength = 160*tudat::physical_constants::JULIAN_DAY;
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -109,7 +114,7 @@ int main( )
     archipelago arch;
     for (int i = 0; i < n_islands; i++){
 
-        SwarmOptimization swarmProblem = SwarmOptimization( numberOfSatellites, dependentVariablesToSave, missionLength );\
+        SwarmOptimization swarmProblem = SwarmOptimization( n_sats, dependentVariablesToSave, missionLength );\
         swarmProblems.push_back(swarmProblem);
         std::cout << "Problemize the problem" << std::endl;
         problem prob{ swarmProblem };
@@ -160,7 +165,7 @@ int main( )
 
         // If an optima is found, stop iterating
         // Else continue until the given maximum
-        if (i > n_generations || bestcost == 0){ iterate = false;}
+        if (i > n_generations){ iterate = false;}
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();

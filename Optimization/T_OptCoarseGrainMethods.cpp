@@ -45,14 +45,14 @@ int main( )
     int n_generations = 50;
     int n_islands = 4;
     int n_pops = 32;
-    int r_seed = 42;
-    int n_sats = 10;
+    int r_seed = 72;
+    int n_sats = 5;
 
     double missionLength = 160*tudat::physical_constants::JULIAN_DAY;
 
 
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
-    int internalIterations = 5;
+    int internalIterations = 1;
 
     string subfolder = "/Coarse/";
     std::cout << "General optimization start!" << std::endl;

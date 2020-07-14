@@ -43,16 +43,17 @@ using namespace tudat;
 int main( )
 {
     int n_generations = 50;
-    int n_islands = 4;
+    int n_islands = 5;
     int n_pops = 32;
     int r_seed = 72;
-    int n_sats = 5;
+    int n_sats = 20;
+    int n_days = 365;
 
-    double missionLength = 160*tudat::physical_constants::JULIAN_DAY;
+    double missionLength = n_days*tudat::physical_constants::JULIAN_DAY;
 
 
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
-    int internalIterations = 1;
+    int internalIterations = 5;
 
     string subfolder = "/Coarse/";
     std::cout << "General optimization start!" << std::endl;
@@ -66,7 +67,7 @@ int main( )
     int algochoice = 0;
     string namesnip = algo_names_shorthand.at(algochoice) + "_sd" + std::to_string(r_seed) +
             "_sats" + std::to_string(n_sats) + "_nisl" + std::to_string(n_islands) + "_npop" + std::to_string(n_pops) +
-            "_int" + std::to_string(internalIterations);
+            "_int" + std::to_string(internalIterations) + "_d" + std::to_string(n_days);
 
     //Set seed for reproducible results
     pagmo::random_device::set_seed(r_seed);
@@ -165,7 +166,7 @@ int main( )
 
         // If an optima is found, stop iterating
         // Else continue until the given maximum
-        if (i > n_generations){ iterate = false;}
+        if (i > n_generations || bestcost == 0){ iterate = false;}
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();

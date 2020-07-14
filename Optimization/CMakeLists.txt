@@ -205,3 +205,9 @@ add_executable(T_CoarseGrainMethods "${SRCROOT}/T_OptCoarseGrainMethods.cpp")
 setup_executable_target(T_CoarseGrainMethods "${SRCROOT}")
 target_link_libraries(T_CoarseGrainMethods pagmo swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
     pthread ${Boost_LIBRARIES})
+
+# Comparison of using multiple different optimization algorithms
+add_executable(T_CoarseGrainMultiMethods "${SRCROOT}/T_OptCoarseGrainMultiMethods.cpp")
+setup_executable_target(T_CoarseGrainMultiMethods "${SRCROOT}")
+target_link_libraries(T_CoarseGrainMultiMethods pagmo swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
+    pthread ${Boost_LIBRARIES})

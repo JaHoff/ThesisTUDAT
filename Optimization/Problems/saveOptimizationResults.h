@@ -1,3 +1,5 @@
+/* Directly re-used from the pagmo examples */
+
 #include <iostream>
 
 #include <boost/filesystem.hpp>
@@ -5,6 +7,8 @@
 #include "applicationOutput.h"
 
 #include "Tudat/InputOutput/basicInputOutput.h"
+
+
 
 void printPopulationToFile( const std::vector< std::vector< double > >& population,
                             const std::string fileSuffix,

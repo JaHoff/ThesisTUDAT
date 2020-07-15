@@ -3,6 +3,11 @@
 //#include <Optimization/Problems/fftw3.h>
 
 
+///////////////////////////////////////
+/// Attempts to create a small-scale python wrapped for the initial idea of the cost function, as well as
+/// later attempts to recreate the cost function in C++ instead.
+/// Both attempts discontinued after running into trouble with the implementation of custom libraries in tudat.
+
 //void FFT2DR2R(double *f, double *F, int width, int height){
 //  fftw_plan p = fftw_plan_r2r_2d(width,height,f,F,FFTW_RODFT01, FFTW_RODFT01,0);
 //  //  fftw_plan_dft_2d(width,height,f,F,FFTW_FORWARD,FFTW_ESTIMATE);

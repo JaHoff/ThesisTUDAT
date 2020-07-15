@@ -42,20 +42,20 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 50;
+    int n_generations = 3;
     int n_islands = 4;
     int n_pops = 32;
     int r_seed = 72;
-    int n_sats = 100;
+    int n_sats = 20;
+    int n_days = 365;
+
+    double missionLength = n_days*tudat::physical_constants::JULIAN_DAY;
+
+
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
-    int n_internal = 3;
+    int internalIterations = 3;
 
-    double missionLength = 160*tudat::physical_constants::JULIAN_DAY;
-
-
-
-
-    string subfolder = "/Coarse_Multi/";
+    string subfolder = "/Test/";
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",
@@ -64,18 +64,27 @@ int main( )
                                              "Generational Ant Colony"};
     std::vector<std::string> algo_names_shorthand{"de1220", "sade", "pso", "pso_gen", "gaco"};
 
-    string namesnip = "singlemethod_sd" + std::to_string(r_seed) +
+    int algochoice = 0;
+    string namesnip = algo_names_shorthand.at(algochoice) + "_sd" + std::to_string(r_seed) +
             "_sats" + std::to_string(n_sats) + "_nisl" + std::to_string(n_islands) + "_npop" + std::to_string(n_pops) +
-            "_int" + std::to_string(n_internal);
+            "_int" + std::to_string(internalIterations) + "_d" + std::to_string(n_days);
 
     //Set seed for reproducible results
     pagmo::random_device::set_seed(r_seed);
 
 
-    // Instantiate a pagmo algorithm
-     // was 20 gens internally the magic nr?
+    // Instantiate an empty pagmo algorithm
     algorithm algo;
 
+    // switch case structure to implement easy future switching if necessary
+    switch (algochoice){
+    case 0:
+        algo = de1220(internalIterations);
+        break;
+    default:
+        algo = de1220();
+        break;
+    }
 
 
     //Load spice kernels
@@ -92,11 +101,13 @@ int main( )
 
     std::cout << "Start defining the general optimization problem" << std::endl;
 
+
     auto t1 = std::chrono::high_resolution_clock::now();
 
     // Convert the size settings to the appropiate types
     pagmo::population::size_type populationSize = n_pops;
 
+    // Create vector of swarmOptimizations and fill them by adding new islands
     std::vector< SwarmOptimization> swarmProblems;
     archipelago arch;
     for (int i = 0; i < n_islands; i++){
@@ -106,14 +117,8 @@ int main( )
         std::cout << "Problemize the problem" << std::endl;
         problem prob{ swarmProblem };
 
-        if (i <= 15){
-            algo = de1220(n_internal);
-        }
-        else{
-            algo = pso(n_internal);
-        }
         arch.push_back(algo,prob,populationSize);
-        std::cout << "added island nr " << i << " with algorithm: " << algo.get_name() << std::endl;
+        std::cout << "added island nr " << i << std::endl;
     }
 
 
@@ -125,7 +130,7 @@ int main( )
     {
         std::cout << "Now at generation " + std::to_string(i) << std::endl;
         i++;
-        arch.evolve(2 );
+        arch.evolve( );
         while( arch.status( ) != pagmo::evolve_status::idle &&
                arch.status( ) != pagmo::evolve_status::idle_error )
         {
@@ -145,6 +150,8 @@ int main( )
         for (auto it = arch.begin(); it != arch.end(); it++){
             std::vector<vector_double> popsf = it->get_population().get_f();
             auto popsx = it->get_population().get_x();
+
+            // by default print intermediate results to safeguard a loss of data
             printPopulationToFile( popsx, namesnip+"_g" + std::to_string( i ) + "_i" + std::to_string(islandcount) , false, subfolder);
             printPopulationToFile( popsf, namesnip+"_g" + std::to_string( i ) + "_i" + std::to_string(islandcount) , true ,subfolder);
 
@@ -158,12 +165,17 @@ int main( )
 
         // If an optima is found, stop iterating
         // Else continue until the given maximum
-        if (i > n_generations){ iterate = false;}
+        if (i > n_generations || bestcost == 0){ iterate = false;}
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();
-    std::cout << "Full optimization of " << n_generations << " generations took " <<
+    std::cout << "Full optimization of " << i << " generations took " <<
                  std::chrono::duration_cast<std::chrono::seconds>( t2 - t1 ).count()<< " seconds" <<  std::endl;
+
+
+    //////////////////////////////////
+    /// DATA OUTPUT/PRINTING
+    ///
 
     int c = 0;
     // Iterate through the islands to write the relevant data to files
@@ -191,7 +203,7 @@ int main( )
                                               "," );
 
         // Write core position to file.
-        input_output::writeMatrixToFile(SP.getCoreState(),
+        input_output::writeMatrixToFile(SP.getCorePosition(),
                                         "corePosition_"+namesnip+"_best.dat",10,
                                         swarm_optimization::getOutputPath( ) + subfolder ) ;
 
@@ -217,6 +229,7 @@ int main( )
         input_output::writeMatrixToFile(SP.getBestPopulationData(),
                                           "championData_"+namesnip+".dat",10,
                                           swarm_optimization::getOutputPath( ) + subfolder);
+
     }
 
 

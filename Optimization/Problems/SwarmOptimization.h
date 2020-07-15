@@ -73,6 +73,29 @@ struct SwarmOptimization {
         return corePosition_;
     }
 
+    Eigen::Vector3d getCoreVelocity(){
+        return coreVelocity_;
+    }
+
+    Eigen::Vector6d getCoreState(){
+        Eigen::Vector6d state;
+        state.segment(0,3) = corePosition_;
+        state.segment(3,3) = coreVelocity_;
+        return state;
+    }
+
+    Eigen::VectorXd getBestPopulationData(){
+        int n = bestPopulationData_.size();
+
+        Eigen::VectorXd vec(n);
+        // less efficient, but other methods yielded errors
+        for (int i=0; i < n; i++){
+            vec[i] = bestPopulationData_[i];
+        }
+        return vec;
+    }
+
+
     double getBestCost(){
         return bestCost_;
     }
@@ -122,12 +145,12 @@ private:
     double interpolationTime_ = 1*3600;
     mutable double bestCost_ = 1e8;
 
-    mutable Eigen::Vector3d corePosition_;
+    mutable Eigen::Vector3d corePosition_, coreVelocity_;
     mutable Eigen::Vector3d L4Cart_, moonVelocity_, moonMomentum_;
 
     mutable basic_astrodynamics::AccelerationMap accelerationModelMap_;
     mutable std::vector< std::string > bodiesToPropagate_,centralBodies_;
-
+    mutable std::vector< double > bestPopulationData_;
     mutable std::shared_ptr< propagators::DependentVariableSaveSettings > dependentVariablesToSave_;
 
     mutable std::map< double, Eigen::VectorXd > previousStateHistory_;

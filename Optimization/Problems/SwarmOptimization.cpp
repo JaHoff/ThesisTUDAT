@@ -249,11 +249,6 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
     Eigen::Vector3d stableVelocity = -L4Cart_.cross(moonMomentum_).normalized() * moonVelocity_.norm();
     Eigen::Vector3d additionalVelocity = {x[3],x[4],x[5]};
 
-    // Distribute the initial states of swarm elements around the core:
-
-    // update position of the core
-    corePosition += coreDisplacement;
-
     // Set initial state
     Eigen::VectorXd systemInitialState = Eigen::VectorXd( 6*swarmSize_);
 
@@ -340,6 +335,8 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
         penalizedBaselineHistory_ = penalizedBaselineHistory;
         lunarkeplerMap_ = dynamicsSimulator.getDependentVariableHistory();
         corePosition_ = corePosition;
+        coreVelocity_ = additionalVelocity;
+        bestPopulationData_ = x;
     }
 
     std::vector<double> output = {cost};

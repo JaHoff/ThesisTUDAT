@@ -42,8 +42,8 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 3;
-    int n_islands = 4;
+    int n_generations = 250;
+    int n_islands = 48;
     int n_pops = 32;
     int r_seed = 72;
     int n_sats = 20;
@@ -55,7 +55,7 @@ int main( )
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
     int internalIterations = 3;
 
-    string subfolder = "/Test/";
+    string subfolder = "/20sats/";
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",

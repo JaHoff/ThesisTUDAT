@@ -96,7 +96,7 @@ struct SwarmOptimization {
     }
 
 
-    double getBestCost(){
+    int getBestCost(){
         return bestCost_;
     }
 
@@ -143,7 +143,7 @@ private:
     double simulationEndEpoch_;
     double timestep_;
     double interpolationTime_ = 1*3600;
-    mutable double bestCost_ = 1e8;
+    mutable int bestCost_ = 1e8;
 
     mutable Eigen::Vector3d corePosition_, coreVelocity_;
     mutable Eigen::Vector3d L4Cart_, moonVelocity_, moonMomentum_;

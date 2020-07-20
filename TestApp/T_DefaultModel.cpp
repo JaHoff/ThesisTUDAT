@@ -168,10 +168,34 @@ int main( )
     systemInitialState.segment( 0, 6 ) = asterixInitialState;
     systemInitialState.segment( 6, 6 ) = obelixInitialState;
 
+    // Define list of dependent variables to save.
+    std::vector< std::shared_ptr< SingleDependentVariableSaveSettings > > dependentVariablesList;
+
+    dependentVariablesList.push_back(
+              std::make_shared< SingleDependentVariableSaveSettings >( relative_position_dependent_variable  , "Earth" , "Moon" ) );
+    dependentVariablesList.push_back(
+              std::make_shared< SingleDependentVariableSaveSettings >( relative_velocity_dependent_variable  , "Earth" , "Moon" ) );
+
+    dependentVariablesList.push_back(
+              std::make_shared< SingleDependentVariableSaveSettings >( relative_position_dependent_variable  , "Earth" , "Sun" ) );
+    dependentVariablesList.push_back(
+              std::make_shared< SingleDependentVariableSaveSettings >( relative_position_dependent_variable  , "Earth" , "Mercury" ) );
+    dependentVariablesList.push_back(
+              std::make_shared< SingleDependentVariableSaveSettings >( relative_position_dependent_variable  , "Earth" , "Mars" ) );
+    dependentVariablesList.push_back(
+              std::make_shared< SingleDependentVariableSaveSettings >( relative_position_dependent_variable  , "Earth" , "Venus" ) );
+    dependentVariablesList.push_back(
+              std::make_shared< SingleDependentVariableSaveSettings >( relative_position_dependent_variable  , "Earth" , "Jupiter" ) );
+    dependentVariablesList.push_back(
+              std::make_shared< SingleDependentVariableSaveSettings >( relative_position_dependent_variable  , "Earth" , "Saturn" ) );
+
+
+    // Create object with list of dependent variables
+    std::shared_ptr< DependentVariableSaveSettings > dependentVariablesToSave = std::make_shared< DependentVariableSaveSettings >( dependentVariablesList  );
 
     std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
             std::make_shared< TranslationalStatePropagatorSettings< double > >
-            ( centralBodies, accelerationModelMap, bodiesToPropagate, systemInitialState, simulationEndEpoch );
+            ( centralBodies, accelerationModelMap, bodiesToPropagate, systemInitialState, simulationEndEpoch,cowell,dependentVariablesToSave );
 
 //        const double minimumStepSize = 0.1;
 //        const double maximumStepSize = 24*3600;
@@ -190,6 +214,7 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
     // Create simulation object and propagate dynamics.
     SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap, integratorSettings, propagatorSettings );
     std::map< double, Eigen::VectorXd > integrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution();
@@ -204,6 +229,16 @@ int main( )
     // Write perturbed satellite propagation history to file.
     input_output::writeDataMapToTextFile( integrationResult,
                                           "propagationHistory" + attachment +".dat",
+                                          tudat_applications::getOutputPath( ) + outputSubFolder,
+                                          "",
+                                          std::numeric_limits< double >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+
+    // Write perturbed satellite propagation history to file.
+    input_output::writeDataMapToTextFile( dynamicsSimulator.getDependentVariableHistory(),
+                                          "Relative_body_pos" + attachment +".dat",
                                           tudat_applications::getOutputPath( ) + outputSubFolder,
                                           "",
                                           std::numeric_limits< double >::digits10,

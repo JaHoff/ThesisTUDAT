@@ -251,8 +251,8 @@ int main( )
     /// E12: 1E-12
 
     std::vector<std::string> MethodNames = {"RK4 10s", "RK4 1M", "RK4 5M", "RK4 15M", "RKF45", "RKF56", "RKF78", "DOPRI87", "ABM", "BS"};
-    std::vector<std::string> ToleranceNames = {"E6", "E7", "E8", "E9", "E10", "E11", "E12"};
-    std::vector<float> Tolerance = {1E-6, 1E-7, 1E-8, 1E-9, 1E-10, 1E-11, 1E-12 };
+    std::vector<std::string> ToleranceNames = {"E6", "E7", "E8", "E9", "E10", "E11", "E12", "E13", "E14"};
+    std::vector<float> Tolerance = {1E-6, 1E-7, 1E-8, 1E-9, 1E-10, 1E-11, 1E-12, 1E-13, 1E-14};
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -413,39 +413,44 @@ int main( )
                     break;
                 }
                 case 8:{
-                    std::shared_ptr< AdamsBashforthMoultonSettings<> > integratorSettings =
-                        std::make_shared< AdamsBashforthMoultonSettings <> >
-                        ( simulationStartEpoch, initialTimestep ,minimumStepSize,maximumStepSize,
-                          relativeErrorTolerance, absoluteErrorTolerance, 6, 11);
 
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                    if (j < 7){
+                        std::shared_ptr< AdamsBashforthMoultonSettings<> > integratorSettings =
+                            std::make_shared< AdamsBashforthMoultonSettings <> >
+                            ( simulationStartEpoch, initialTimestep ,minimumStepSize,maximumStepSize,
+                              relativeErrorTolerance, absoluteErrorTolerance, 6, 11);
 
-                    // Create simulation object and propagate dynamics.
-                    SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap, integratorSettings, propagatorSettings );
-                    integrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution();
-                    numberOfFunctionEvaluations.push_back( dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( ).rbegin( )->second );
-                    totalPropagationTime.push_back( dynamicsSimulator.getCumulativeComputationTimeHistory( ).rbegin( )->second );
-                    labels.push_back( MethodNames[i] + ToleranceNames[j] );
+                        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                        ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
+                        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                        // Create simulation object and propagate dynamics.
+                        SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap, integratorSettings, propagatorSettings );
+                        integrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution();
+                        numberOfFunctionEvaluations.push_back( dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( ).rbegin( )->second );
+                        totalPropagationTime.push_back( dynamicsSimulator.getCumulativeComputationTimeHistory( ).rbegin( )->second );
+                        labels.push_back( MethodNames[i] + ToleranceNames[j] );
+                    }
                     break;
                 }
                 case 9:{
-                    std::shared_ptr< BulirschStoerIntegratorSettings<> > integratorSettings =
-                        std::make_shared< BulirschStoerIntegratorSettings <> >
-                        ( simulationStartEpoch, initialTimestep, ExtrapolationMethodStepSequences::bulirsch_stoer_sequence,8,minimumStepSize,maximumStepSize,
-                          relativeErrorTolerance, absoluteErrorTolerance);
+                    if (j < 7){
+                        std::shared_ptr< BulirschStoerIntegratorSettings<> > integratorSettings =
+                            std::make_shared< BulirschStoerIntegratorSettings <> >
+                            ( simulationStartEpoch, initialTimestep, ExtrapolationMethodStepSequences::bulirsch_stoer_sequence,8,minimumStepSize,maximumStepSize,
+                              relativeErrorTolerance, absoluteErrorTolerance);
 
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-                    ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                        ///////////////////////             PROPAGATE ORBIT            ////////////////////////////////////////////////////////
+                        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                    // Create simulation object and propagate dynamics.
-                    SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap, integratorSettings, propagatorSettings );
-                    integrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution();
-                    numberOfFunctionEvaluations.push_back( dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( ).rbegin( )->second );
-                    totalPropagationTime.push_back( dynamicsSimulator.getCumulativeComputationTimeHistory( ).rbegin( )->second );
-                    labels.push_back( MethodNames[i] + ToleranceNames[j] );
+                        // Create simulation object and propagate dynamics.
+                        SingleArcDynamicsSimulator< > dynamicsSimulator( bodyMap, integratorSettings, propagatorSettings );
+                        integrationResult = dynamicsSimulator.getEquationsOfMotionNumericalSolution();
+                        numberOfFunctionEvaluations.push_back( dynamicsSimulator.getCumulativeNumberOfFunctionEvaluations( ).rbegin( )->second );
+                        totalPropagationTime.push_back( dynamicsSimulator.getCumulativeComputationTimeHistory( ).rbegin( )->second );
+                        labels.push_back( MethodNames[i] + ToleranceNames[j] );
+                    }
                     break;
                 }
                 default:{
@@ -463,10 +468,16 @@ int main( )
                 ///////////////////////        PROVIDE OUTPUT TO CONSOLE AND FILES           //////////////////////////////////////////
                 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+                if ((i == 8 && j >= 7) || (i == 9 && j >= 7)){
+                    std::cout << "Skip this case interpolation!" << std::endl;
 
-                std::string name = basename +"_" + std::to_string(i) + attachment + "_" + ToleranceNames[j];
+                }
+                else{
+                    std::string name = basename +"_" + std::to_string(i) + attachment + "_" + ToleranceNames[j];
 
-                InterpolateAndSave(integrationResult, name, simulationStartEpoch,interpolationN,interpolationStep);
+                    InterpolateAndSave(integrationResult, name, simulationStartEpoch,interpolationN,interpolationStep);
+                }
+
 
 
 

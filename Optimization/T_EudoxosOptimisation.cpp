@@ -42,20 +42,20 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 250;
-    int n_islands = 48;
-    int n_pops = 32;
+    int n_generations = 50;
+    int n_islands = 32;
+    int n_pops = 48;
     int r_seed = 72;
-    int n_sats = 20;
+    int n_sats = 25;
     int n_days = 365;
 
     double missionLength = n_days*tudat::physical_constants::JULIAN_DAY;
 
 
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
-    int internalIterations = 3;
+    int internalIterations = 5;
 
-    string subfolder = "/20sats/";
+    string subfolder = "/25satslargespace/";
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",
@@ -114,6 +114,8 @@ int main( )
 
         SwarmOptimization swarmProblem = SwarmOptimization( n_sats, dependentVariablesToSave, missionLength );\
         swarmProblems.push_back(swarmProblem);
+
+        // Instantiate a new problem class to separate the tudat functionalities between threads
         std::cout << "Problemize the problem" << std::endl;
         problem prob{ swarmProblem };
 
@@ -160,6 +162,13 @@ int main( )
             // Store the best fitness of this generation
             double bestgencost = pops.get_f()[pops.best_idx()][0];
             if (bestgencost < bestcost) {bestcost = bestgencost;}
+
+
+            // print intermediate champion data along with cost to file
+            auto SP = swarmProblems.at( islandcount);
+            input_output::writeMatrixToFile(SP.getBestPopulationData(),
+                                              "intermediatechampionData_isl"+ std::to_string(islandcount)+"_c"+std::to_string(int(bestgencost))+".dat",6,
+                                              swarm_optimization::getOutputPath( ) + subfolder);
             islandcount++;
         }
 

@@ -52,6 +52,7 @@ int main( )
     double missionLength = n_days*tudat::physical_constants::JULIAN_DAY;
 
 
+    std::cout << "Eudoxos updated to newest version: 25satslarge" << std::endl;
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
     int internalIterations = 5;
 

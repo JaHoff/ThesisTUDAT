@@ -42,7 +42,7 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 50;
+    int n_generations = 200;
     int n_islands = 32;
     int n_pops = 48;
     int r_seed = 72;

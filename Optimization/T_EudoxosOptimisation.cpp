@@ -128,6 +128,10 @@ int main( )
     std::map <int, std::vector< double >> fitnessmap;
     std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
     int i = 0;
+    int championIndex;
+
+    double bestcost = 1e8;
+
     bool iterate = true;
     while( iterate)
     {
@@ -146,7 +150,7 @@ int main( )
         // Write current iteration results to file
 
 
-        double bestcost = 1e8;
+
         int islandcount = 0;
 
         // iterate through the islands and store their generational data in files
@@ -162,7 +166,7 @@ int main( )
 
             // Store the best fitness of this generation
             double bestgencost = pops.get_f()[pops.best_idx()][0];
-            if (bestgencost < bestcost) {bestcost = bestgencost;}
+            if (bestgencost < bestcost) {bestcost = bestgencost; championIndex = islandcount;}
 
 
             // print intermediate champion data along with cost to file
@@ -202,48 +206,48 @@ int main( )
         }
         tudat::input_output::writeDataMapToTextFile(
                     finalStates, "swarmFinalStates_"+namesnip+".dat", swarm_optimization::getOutputPath( ) + subfolder );
-
-        // Write lunar state history to file.
-        input_output::writeDataMapToTextFile( SP.ComputeLunarOrbit(),
-                                              "propagationHistory_moon.dat",
-                                              swarm_optimization::getOutputPath( ) + subfolder,
-                                              "",
-                                              std::numeric_limits< double >::digits10,
-                                              std::numeric_limits< double >::digits10,
-                                              "," );
-
-        // Write core position to file.
-        input_output::writeMatrixToFile(SP.getCorePosition(),
-                                        "corePosition_"+namesnip+"_best.dat",10,
-                                        swarm_optimization::getOutputPath( ) + subfolder ) ;
-
-        // Write the champion orbit data to a file.
-        input_output::writeDataMapToTextFile( SP.getBestStateHistory(),
-                                              "propagationHistory_"+namesnip+"_best.dat",
-                                              swarm_optimization::getOutputPath( ) + subfolder,
-                                              "",
-                                              std::numeric_limits< double >::digits10,
-                                              std::numeric_limits< double >::digits10,
-                                              "," );
-
-        // Write down files that show the baselines which triggered the cost function
-        input_output::writeDataMapToTextFile(SP.getPenalizedBaselineHistoryMap(),
-                                              "penaltyHistory_"+namesnip+".dat",
-                                              swarm_optimization::getOutputPath( ) + subfolder,
-                                              "",
-                                              std::numeric_limits< double >::digits10,
-                                              std::numeric_limits< double >::digits10,
-                                              ",");
-
-        // Write down file with best population variables
-        input_output::writeMatrixToFile(SP.getBestPopulationData(),
-                                          "championData_"+namesnip+".dat",10,
-                                          swarm_optimization::getOutputPath( ) + subfolder);
-
     }
 
+    ///// Output champion data
 
+    SwarmOptimization champ = swarmProblems.at(championIndex);
 
+    // Write lunar state history to file.
+    input_output::writeDataMapToTextFile( champ.ComputeLunarOrbit(),
+                                          "propagationHistory_moon.dat",
+                                          swarm_optimization::getOutputPath( ) + subfolder,
+                                          "",
+                                          std::numeric_limits< double >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    // Write core position to file.
+    input_output::writeMatrixToFile(champ.getCorePosition(),
+                                    "corePosition_"+namesnip+"_best.dat",10,
+                                    swarm_optimization::getOutputPath( ) + subfolder ) ;
+
+    // Write the champion orbit data to a file.
+    input_output::writeDataMapToTextFile( champ.getBestStateHistory(),
+                                          "propagationHistory_"+namesnip+"_best.dat",
+                                          swarm_optimization::getOutputPath( ) + subfolder,
+                                          "",
+                                          std::numeric_limits< double >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          "," );
+
+    // Write down files that show the baselines which triggered the cost function
+    input_output::writeDataMapToTextFile(champ.getPenalizedBaselineHistoryMap(),
+                                          "penaltyHistory_"+namesnip+".dat",
+                                          swarm_optimization::getOutputPath( ) + subfolder,
+                                          "",
+                                          std::numeric_limits< double >::digits10,
+                                          std::numeric_limits< double >::digits10,
+                                          ",");
+
+    // Write down file with best population variables
+    input_output::writeMatrixToFile(champ.getBestPopulationData(),
+                                      "championData_"+namesnip+".dat",10,
+                                      swarm_optimization::getOutputPath( ) + subfolder);
 
 }
 

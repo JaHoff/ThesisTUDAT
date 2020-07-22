@@ -217,3 +217,10 @@ add_executable(T_EudoxosOptimisation "${SRCROOT}/T_EudoxosOptimisation.cpp")
 setup_executable_target(T_EudoxosOptimisation "${SRCROOT}")
 target_link_libraries(T_EudoxosOptimisation pagmo swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
     pthread ${Boost_LIBRARIES})
+
+# Propagate the results of a optimisation datafile for a certain duration
+add_executable(T_PropagateOptimisation "${SRCROOT}/T_PropagateOptimisationResult.cpp")
+setup_executable_target(T_PropagateOptimisation "${SRCROOT}")
+target_link_libraries(T_PropagateOptimisation pagmo swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
+    pthread ${Boost_LIBRARIES})
+

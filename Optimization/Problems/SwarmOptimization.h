@@ -132,6 +132,7 @@ struct SwarmOptimization {
     }
 
     void setThreads(int thre){
+        // decrepated
         n_threads = thre;
     }
 

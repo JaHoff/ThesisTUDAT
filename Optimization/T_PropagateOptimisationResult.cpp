@@ -92,7 +92,7 @@ int main( )
     std::string attachment = "20sat_champ";
 
     // Integer name of the population member to propagate for
-    int popmember = 12;
+    int popmember = 11; // Remember - count starts at 0
 
     // for how long to propagate the orbit
     double daysToPropagate = 365*5;
@@ -101,7 +101,14 @@ int main( )
     double interpolationTime = 4*3600;
 
     /// Dependent variables
-    std::shared_ptr< propagators::DependentVariableSaveSettings > dependentVariablesToSave;
+    // Define list of dependent variables to save.
+    std::vector< std::shared_ptr< propagators::SingleDependentVariableSaveSettings > > dependentVariablesList;
+    dependentVariablesList.push_back( std::make_shared < propagators::SingleDependentVariableSaveSettings> (
+                                          propagators::keplerian_state_dependent_variable, "Moon", "Earth"));
+
+    // Create object with list of dependent variables.
+    std::shared_ptr< propagators::DependentVariableSaveSettings > dependentVariablesToSave =
+            std::make_shared< propagators::DependentVariableSaveSettings >( dependentVariablesList );
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            LOADING FILE                  //////////////////////////////////////////////////////
@@ -112,13 +119,6 @@ int main( )
     auto x = tudat::input_output::readMatrixFromFile(relFolder + filename);
 
     std::cout << "found data!" << std::endl;
-    std::cout << "map size: " << x.size() << std::endl;
-
-//    auto extract = x[0];
-
-//    std::cout << "extraction worked!" << std::endl;
-//    std::cout << "extracted vector of size: " << extract.size()<< std::endl;
-//    std::cout << extract << std::endl;
 
     Eigen::VectorXd popdata = x.row(popmember);
 
@@ -126,7 +126,6 @@ int main( )
 
     std::cout << "Grabbed population number " << popmember << ", retrieved following vector:" << std::endl;
     std::cout << popdata << std::endl;
-
     std::cout << "Identified " << n_satellites << " satellites from this data file" << std::endl;
 
 
@@ -325,6 +324,17 @@ int main( )
     std::map< double, Eigen::VectorXd > integrationResult =
             InterpolateData(dynamicsSimulator.getEquationsOfMotionNumericalSolution( ),interpolationTime, simulationStartEpoch, simulationEndEpoch);
 
+    //Interpolate moon position
+
+    std::map<double, Eigen::VectorXd> lunarkeplerMap = dynamicsSimulator.getDependentVariableHistory();
+    double mu = bodyMap["Earth"]->getGravityFieldModel()->getGravitationalParameter();
+    std::map< double, Eigen::VectorXd > newmap;
+    for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = lunarkeplerMap.begin( );
+             stateIterator != lunarkeplerMap.end( ); stateIterator++ ){
+        Eigen::Vector6d grabber = stateIterator->second;
+        newmap.insert(std::pair<double,Eigen::VectorXd>(stateIterator->first , convertKeplerianToCartesianElements(grabber,mu) ));
+    }
+    std::map< double, Eigen::VectorXd > moonState = InterpolateData(newmap,interpolationTime,simulationStartEpoch,simulationEndEpoch);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////        PROVIDE OUTPUT TO CONSOLE AND FILES           //////////////////////////////////////////
@@ -334,22 +344,26 @@ int main( )
 
     // Write perturbed satellite propagation history to file.
     input_output::writeDataMapToTextFile( integrationResult,
-                                          "propagationHistory" + attachment +".dat",
+                                          "propagationHistory_" + attachment +".dat",
                                           swarm_optimization::getOutputPath( ) + outputSubFolder,
                                           "",
                                           std::numeric_limits< double >::digits10,
                                           std::numeric_limits< double >::digits10,
                                           "," );
 
-
-    // Write perturbed satellite propagation history to file.
-    input_output::writeDataMapToTextFile( dynamicsSimulator.getDependentVariableHistory(),
-                                          "dependentVariables" + attachment +".dat",
+    // Write lunar state history to file.
+    input_output::writeDataMapToTextFile( moonState,
+                                          "propagationHistory_"+attachment+"_moon.dat",
                                           swarm_optimization::getOutputPath( ) + outputSubFolder,
                                           "",
                                           std::numeric_limits< double >::digits10,
                                           std::numeric_limits< double >::digits10,
                                           "," );
+
+    // Write core position to file.
+    input_output::writeMatrixToFile(corePosition,
+                                    "corePosition_"+attachment+".dat",10,
+                                    swarm_optimization::getOutputPath( ) + outputSubFolder ) ;
 
     // Final statement.
     // The exit code EXIT_SUCCESS indicates that the program was successfully executed.

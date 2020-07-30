@@ -10,11 +10,13 @@
 # Set the header files.
 set(MY_PAGMO_PROBLEMS_HEADERS
   "${CMAKE_CURRENT_SOURCE_DIR}/SwarmOptimization.h"
+  "${CMAKE_CURRENT_SOURCE_DIR}/SecondOrderOptimisation.h"
   "${CMAKE_CURRENT_SOURCE_DIR}/saveOptimizationResults.h"
 )
 
 set(MY_PAGMO_PROBLEMS_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/SwarmOptimization.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/SecondOrderOptimisation.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/CostFunctionWrapper.cpp"
 )
 

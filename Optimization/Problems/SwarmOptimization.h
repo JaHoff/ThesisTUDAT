@@ -131,12 +131,7 @@ struct SwarmOptimization {
         return map;
     }
 
-    void setThreads(int thre){
-        // decrepated
-        n_threads = thre;
-    }
-
-private:
+protected:
     // used
     int swarmSize_;
     int n_threads = 1;
@@ -170,5 +165,6 @@ private:
 
 
 };
+
 
 #endif // TUDAT_SWARM_OPTIMIZATION_HPP

@@ -1,4 +1,4 @@
-#    Copyright (c) 2010-2019, Delft University of Technology
+#   Copyright (c) 2010-2019, Delft University of Technology
 #    All rigths reserved
 #
 #    This file is part of the Tudat. Redistribution and use in source and
@@ -221,6 +221,11 @@ target_link_libraries(T_EudoxosOptimisation pagmo swarm_optimization_library ${T
 # Propagate the results of a optimisation datafile for a certain duration
 add_executable(T_PropagateOptimisation "${SRCROOT}/T_PropagateOptimisationResult.cpp")
 setup_executable_target(T_PropagateOptimisation "${SRCROOT}")
-target_link_libraries(T_PropagateOptimisation pagmo swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
+target_link_libraries(T_PropagateOptimisation swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
     pthread ${Boost_LIBRARIES})
 
+# Second order optimisation, optimise relative velocities for long-term stability.
+add_executable(T_SecondOrderOptimisation "${SRCROOT}/T_SecondOrderOptimization.cpp")
+setup_executable_target(T_SecondOrderOptimisation "${SRCROOT}")
+target_link_libraries(T_SecondOrderOptimisation pagmo swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
+    pthread ${Boost_LIBRARIES})

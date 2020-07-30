@@ -350,8 +350,8 @@ std::vector<double> SwarmOptimization::fitness(const std::vector<double> &x) con
 
 std::pair<std::vector<double>, std::vector<double>> SwarmOptimization::get_bounds() const
 {
-    std::vector<double> lowerbounds = {-5000.e3, -5000.e3, -100.e3,-20, -20., -20.};
-    std::vector<double> upperbounds = {5000.e3, 5000.e3, 100.e3 , 20., 20., 20.};
+    std::vector<double> lowerbounds = {-1500.e3, -1500.e3, -100.e3,-20, -20., -20.};
+    std::vector<double> upperbounds = {1500.e3, 1500.e3, 100.e3 , 20., 20., 20.};
     std::vector<double> lowerelementbounds = {-50.e3, -50.e3, -50.e3};
     std::vector<double> upperelementbounds = {50.e3, 50.e3, 50.e3};
 

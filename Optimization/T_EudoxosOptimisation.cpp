@@ -24,6 +24,7 @@ Base adapted from the propagationTargetingExample included by TUDAT*/
 #include <pagmo/algorithms/pso_gen.hpp>
 #include <pagmo/io.hpp>
 #include <pagmo/archipelago.hpp>
+#include <pagmo/topologies/fully_connected.hpp>
 
 #include <pagmo/bfe.hpp>
 #include <pagmo/batch_evaluators/default_bfe.hpp>
@@ -111,6 +112,12 @@ int main( )
     // Create vector of swarmOptimizations and fill them by adding new islands
     std::vector< SwarmOptimization> swarmProblems;
     archipelago arch;
+
+    // Insert topology
+    topology top = topology(fully_connected());
+
+    arch.set_topology(top);
+
     for (int i = 0; i < n_islands; i++){
 
         SwarmOptimization swarmProblem = SwarmOptimization( n_sats, dependentVariablesToSave, missionLength );\

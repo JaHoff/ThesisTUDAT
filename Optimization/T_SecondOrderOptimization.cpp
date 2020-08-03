@@ -24,11 +24,12 @@ Base adapted from the propagationTargetingExample included by TUDAT*/
 #include <pagmo/algorithms/pso_gen.hpp>
 #include <pagmo/io.hpp>
 #include <pagmo/archipelago.hpp>
+#include <pagmo/topologies/fully_connected.hpp>
 
 #include <pagmo/bfe.hpp>
 #include <pagmo/batch_evaluators/default_bfe.hpp>
 
-#include "Problems/SwarmOptimization.h"
+#include "Problems/SecondOrderOptimisation.h"
 #include "Problems/applicationOutput.h"
 #include "Problems/saveOptimizationResults.h"
 
@@ -42,13 +43,19 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 200;
-    int n_islands = 32;
-    int n_pops = 48;
+    int n_generations = 50;
+    int n_islands = 4;
+    int n_pops = 32;
     int r_seed = 72;
     int n_sats = 25;
-    int n_days = 365;
+    int n_days = 2*365;
 
+    Eigen::Vector3d corePosition = {4451595.805418905,
+                                    45662.36398591232,
+                                    -3765.688752660145};
+    Eigen::Vector3d coreVelocity = {2.181963044975345,
+                                    -13.29823474082929,
+                                    -12.3799288546268};
     double missionLength = n_days*tudat::physical_constants::JULIAN_DAY;
 
 
@@ -56,7 +63,7 @@ int main( )
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
     int internalIterations = 5;
 
-    string subfolder = "/25satslargespace/";
+    string subfolder = "/25sats_secondOrder_25sats/";
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",
@@ -109,11 +116,18 @@ int main( )
     pagmo::population::size_type populationSize = n_pops;
 
     // Create vector of swarmOptimizations and fill them by adding new islands
-    std::vector< SwarmOptimization> swarmProblems;
+    std::vector< SecondOrderOptimisation > swarmProblems;
     archipelago arch;
+
+    // Insert topology
+    topology top = topology(fully_connected());
+
+    arch.set_topology(top);
+
     for (int i = 0; i < n_islands; i++){
 
-        SwarmOptimization swarmProblem = SwarmOptimization( n_sats, dependentVariablesToSave, missionLength );\
+        SecondOrderOptimisation swarmProblem = SecondOrderOptimisation( n_sats, dependentVariablesToSave, missionLength,
+                                                                        corePosition, coreVelocity);\
         swarmProblems.push_back(swarmProblem);
 
         // Instantiate a new problem class to separate the tudat functionalities between threads
@@ -123,6 +137,7 @@ int main( )
         arch.push_back(algo,prob,populationSize);
         std::cout << "added island nr " << i << std::endl;
     }
+
 
 
     std::map <int, std::vector< double >> fitnessmap;
@@ -210,7 +225,7 @@ int main( )
 
     ///// Output champion data
 
-    SwarmOptimization champ = swarmProblems.at(championIndex);
+    SecondOrderOptimisation champ = swarmProblems.at(championIndex);
 
     // Write lunar state history to file.
     input_output::writeDataMapToTextFile( champ.ComputeLunarOrbit(),

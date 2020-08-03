@@ -27,7 +27,9 @@ struct SecondOrderOptimisation{
 
     SecondOrderOptimisation( const int swarmSize,
                                  const std::shared_ptr< propagators::DependentVariableSaveSettings > dependentVariablesToSave ,
-                       const double missionLength);
+                       const double missionLength,
+                             const Eigen::Vector3d corePosition,
+                             const Eigen::Vector3d coreVelocity);
     // interpolating data
     std::map< double, Eigen::VectorXd> InterpolateData(std::map< double, Eigen::VectorXd > integrationResult, double stepsize ) const;
 

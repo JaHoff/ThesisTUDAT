@@ -73,9 +73,13 @@ std::map< double, Eigen::VectorXd> SecondOrderOptimisation::InterpolateData(std:
 /*Initialisation of the problem should include most of the general setup, that would not vary with iterations*/
 SecondOrderOptimisation::SecondOrderOptimisation(const int swarmSize,
         const std::shared_ptr< propagators::DependentVariableSaveSettings> dependentVariablesToSave,
-                                     const double missionLength) :
+                                     const double missionLength,
+                                                 const Eigen::Vector3d corePosition,
+                                                 const Eigen::Vector3d coreVelocity) :
     swarmSize_( swarmSize ),
-    dependentVariablesToSave_( dependentVariablesToSave )
+    dependentVariablesToSave_( dependentVariablesToSave ),
+    corePosition_( corePosition ),
+    coreVelocity_( coreVelocity )
 {
     //std::cout << "Started constructing the base problem" << std::endl;
     using namespace tudat;
@@ -236,15 +240,9 @@ std::vector<double> SecondOrderOptimisation::fitness(const std::vector<double> &
     ///
 
 //    //std::cout << "L4 position: " << L4Cart << std::endl;
-    // Displace the core of the swarm based off a variable
-    Eigen::Vector3d coreDisplacement = Eigen::Vector3d();
-    coreDisplacement(0) = x[0];
-    coreDisplacement(1) = x[1];
-    coreDisplacement(2) = x[2];
-    Eigen::Vector3d corePosition = L4Cart_ + coreDisplacement;
+
     // Set the swarm velocity based off the core position plus a additionalVelocity variable
     Eigen::Vector3d stableVelocity = -L4Cart_.cross(moonMomentum_).normalized() * moonVelocity_.norm();
-    Eigen::Vector3d additionalVelocity = {x[3],x[4],x[5]};
 
     // Set initial state
     Eigen::VectorXd systemInitialState = Eigen::VectorXd( 6*swarmSize_);
@@ -252,13 +250,13 @@ std::vector<double> SecondOrderOptimisation::fitness(const std::vector<double> &
     //std::cout << "Start displacing satellites" << std::endl;
     for (int i = 0; i < swarmSize_; i++){
         Eigen::Vector3d Displacement = Eigen::Vector3d();
-        Displacement(0) = x[6+3*i]; // 1: 100
-        Displacement(1) = x[7+3*i];
-        Displacement(2) = x[8+3*i];
+        Displacement(0) = x[3*i]; // 1: 100
+        Displacement(1) = x[1+3*i];
+        Displacement(2) = x[2+3*i];
 
         Eigen::Vector6d InitialState = Eigen::Vector6d();
-        InitialState.segment(0,3) = corePosition + Displacement;
-        InitialState.segment(3,3) = stableVelocity + additionalVelocity;
+        InitialState.segment(0,3) = corePosition_ + L4Cart_ + Displacement;
+        InitialState.segment(3,3) = stableVelocity + coreVelocity_;
 
         systemInitialState.segment( 6*i, 6 ) = InitialState;
     }
@@ -331,8 +329,6 @@ std::vector<double> SecondOrderOptimisation::fitness(const std::vector<double> &
         bestStateHistory_ = integrationResult;
         penalizedBaselineHistory_ = penalizedBaselineHistory;
         lunarkeplerMap_ = dynamicsSimulator.getDependentVariableHistory();
-        corePosition_ = corePosition;
-        coreVelocity_ = additionalVelocity;
         bestPopulationData_ = x;
     }
 
@@ -351,8 +347,8 @@ std::pair<std::vector<double>, std::vector<double>> SecondOrderOptimisation::get
     std::vector<double> upperbounds;
     std::vector<double> lowerpositionbounds = {-50.e3, -50.e3, -50.e3};
     std::vector<double> upperpositionbounds = {50.e3, 50.e3, 50.e3};
-    std::vector<double> lowervelocitybounds = {-50, -50, -50};
-    std::vector<double> uppervelocitybounds = {50, 50, 50};
+    std::vector<double> lowervelocitybounds = {-5, -5, -5};
+    std::vector<double> uppervelocitybounds = {5, 5, 5};
 
     // Insert a position, velocity pair
     for (int i =0; i < swarmSize_; i++){

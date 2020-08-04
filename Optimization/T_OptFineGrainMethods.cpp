@@ -109,8 +109,6 @@ int main( )
         population pops = population(swarmProblem, populationSize);
 
 
-
-        std::map <int, std::vector< double >> fitnessmap;
         std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
         int i = 0;
         bool iterate = true;
@@ -121,8 +119,6 @@ int main( )
 
             algo.evolve(pops);
 
-            fitnessmap.insert( std::pair<double, std::vector< double > >( i, pops.get_f().at(0) ) );
-            // Write current iteration results to file
 
             std::vector<vector_double> popsf = pops.get_f();
             printPopulationToFile( pops.get_x( ), "swarmPropagation_"+namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , false );

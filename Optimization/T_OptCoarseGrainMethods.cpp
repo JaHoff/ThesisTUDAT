@@ -124,8 +124,6 @@ int main( )
         std::cout << "added island nr " << i << std::endl;
     }
 
-
-    std::map <int, std::vector< double >> fitnessmap;
     std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
     int i = 0;
     bool iterate = true;
@@ -141,9 +139,6 @@ int main( )
         }
         arch.wait_check( ); // Raises errors
         std::cout << "evolution done!" << std::endl;
-
-        fitnessmap.insert( std::pair<double, std::vector< double > >( i, arch.begin()->get_population().get_f().at(0) ) );
-        // Write current iteration results to file
 
 
         double bestcost = 1e8;

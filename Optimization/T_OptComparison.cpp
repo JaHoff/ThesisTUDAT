@@ -123,7 +123,6 @@ int main( )
 
         //island islands[]={ island{algo,prob,populationSize},island{algo,prob,populationSize},island{algo,prob,populationSize},island{algo,prob,populationSize} };
 
-        std::map <int, std::vector< double >> fitnessmap;
         std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
         int i = 0;
         bool iterate = true;
@@ -139,8 +138,6 @@ int main( )
             }
             isl.wait_check( ); // Raises errors
 
-            fitnessmap.insert( std::pair<double, std::vector< double > >( i, isl.get_population().get_f().at(0) ) );
-            // Write current iteration results to file
 
             std::vector<vector_double> popsf = isl.get_population().get_f();
             printPopulationToFile( isl.get_population( ).get_x( ), namesnip+"_" + std::to_string( i ) + "_" + std::to_string( i ) , false, subfolder );

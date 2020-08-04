@@ -131,8 +131,6 @@ int main( )
         std::cout << "added island nr " << i << std::endl;
     }
 
-
-    std::map <int, std::vector< double >> fitnessmap;
     std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
     int i = 0;
     int championIndex;
@@ -153,11 +151,6 @@ int main( )
         arch.wait_check( ); // Raises errors
         std::cout << "evolution done!" << std::endl;
 
-        fitnessmap.insert( std::pair<double, std::vector< double > >( i, arch.begin()->get_population().get_f().at(0) ) );
-        // Write current iteration results to file
-
-
-
         int islandcount = 0;
 
         // iterate through the islands and store their generational data in files
@@ -176,11 +169,6 @@ int main( )
             if (bestgencost < bestcost) {bestcost = bestgencost; championIndex = islandcount;}
 
 
-            // print intermediate champion data along with cost to file
-//            auto SP = swarmProblems.at( islandcount);
-//            input_output::writeMatrixToFile(SP.getBestPopulationData(),
-//                                              "intermediatechampionData_isl"+ std::to_string(islandcount)+"_c"+std::to_string(int(bestgencost))+".dat",6,
-//                                              swarm_optimization::getOutputPath( ) + subfolder);
             islandcount++;
         }
 

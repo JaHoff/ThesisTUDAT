@@ -24,6 +24,7 @@ Base adapted from the propagationTargetingExample included by TUDAT*/
 #include <pagmo/algorithms/pso_gen.hpp>
 #include <pagmo/io.hpp>
 #include <pagmo/archipelago.hpp>
+#include <pagmo/topologies/fully_connected.hpp>
 
 #include <pagmo/bfe.hpp>
 #include <pagmo/batch_evaluators/default_bfe.hpp>
@@ -43,19 +44,19 @@ using namespace tudat;
 int main( )
 {
     int n_generations = 50;
-    int n_islands = 4;
+    int n_islands = 8;
     int n_pops = 32;
     int r_seed = 72;
-    int n_sats = 100;
+    int n_sats = 15;
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
-    int n_internal = 3;
+    int n_internal = 1;
 
     double missionLength = 160*tudat::physical_constants::JULIAN_DAY;
 
 
 
 
-    string subfolder = "/Coarse_Multi/";
+    string subfolder = "/Coarse_Multi_2/";
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",
@@ -64,7 +65,7 @@ int main( )
                                              "Generational Ant Colony"};
     std::vector<std::string> algo_names_shorthand{"de1220", "sade", "pso", "pso_gen", "gaco"};
 
-    string namesnip = "singlemethod_sd" + std::to_string(r_seed) +
+    string namesnip = "singlemethod_notop_sd" + std::to_string(r_seed) +
             "_sats" + std::to_string(n_sats) + "_nisl" + std::to_string(n_islands) + "_npop" + std::to_string(n_pops) +
             "_int" + std::to_string(n_internal);
 
@@ -99,6 +100,10 @@ int main( )
 
     std::vector< SwarmOptimization> swarmProblems;
     archipelago arch;
+
+//    topology top = topology(fully_connected());
+//    arch.set_topology(top);
+
     for (int i = 0; i < n_islands; i++){
 
         SwarmOptimization swarmProblem = SwarmOptimization( n_sats, dependentVariablesToSave, missionLength );\
@@ -106,7 +111,7 @@ int main( )
         std::cout << "Problemize the problem" << std::endl;
         problem prob{ swarmProblem };
 
-        if (i <= 15){
+        if (i <= 17){
             algo = de1220(n_internal);
         }
         else{

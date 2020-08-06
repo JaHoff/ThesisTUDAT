@@ -39,7 +39,6 @@ using namespace pagmo;
 using namespace swarm_optimization;
 using namespace tudat;
 
-#define n_islands 2;
 
 int main( )
 {
@@ -118,10 +117,6 @@ int main( )
 
 
         island isl{algo, prob, populationSize};
-
-        // Example code, multi threading islands
-
-        //island islands[]={ island{algo,prob,populationSize},island{algo,prob,populationSize},island{algo,prob,populationSize},island{algo,prob,populationSize} };
 
         std::cout << "Starting evolving optimization problem for "<< n_generations << " generations!" << std::endl;
         int i = 0;

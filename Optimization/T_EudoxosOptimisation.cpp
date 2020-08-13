@@ -200,7 +200,7 @@ int main( )
             finalStates[ i ] = SP.getPreviousFinalState( );
         }
         tudat::input_output::writeDataMapToTextFile(
-                    finalStates, "swarmFinalStates_"+namesnip+".dat", swarm_optimization::getOutputPath( ) + subfolder );
+                    finalStates, "swarmFinalStates_"+namesnip+std::to_string(c)+".dat", swarm_optimization::getOutputPath( ) + subfolder );
     }
 
     ///// Output champion data

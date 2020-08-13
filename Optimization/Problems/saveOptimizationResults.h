@@ -59,7 +59,7 @@ void printPopulationMapToFile( std::map <int, const std::vector< std::vector< do
         matrixToPrint(i,0) = it->first;
 
         for (unsigned int k = 0; k < population.size(); k++){
-            for( unsigned int j = 0; j < size2; j++ )
+            for(  int j = 0; j < size2; j++ )
             {
 
                 matrixToPrint( i, j + k*population.at(0).size() ) = population.at( k ).at( j );

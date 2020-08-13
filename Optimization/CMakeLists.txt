@@ -221,7 +221,7 @@ target_link_libraries(T_EudoxosOptimisation pagmo swarm_optimization_library ${T
 # Propagate the results of a optimisation datafile for a certain duration
 add_executable(T_PropagateOptimisation "${SRCROOT}/T_PropagateOptimisationResult.cpp")
 setup_executable_target(T_PropagateOptimisation "${SRCROOT}")
-target_link_libraries(T_PropagateOptimisation swarm_optimization_library ${TUDAT_PROPAGATION_LIBRARIES}
+target_link_libraries(T_PropagateOptimisation ${TUDAT_PROPAGATION_LIBRARIES}
     pthread ${Boost_LIBRARIES})
 
 # Second order optimisation, optimise relative velocities for long-term stability.

@@ -15,7 +15,7 @@
 #include "Tudat/InputOutput/basicInputOutput.h"
 
 #include "Problems/applicationOutput.h"
-#include "Problems/saveOptimizationResults.h"
+//#include "Problems/saveOptimizationResults.h"
 
 
 std::map< double, Eigen::VectorXd> InterpolateData(std::map< double, Eigen::VectorXd > integrationResult, double stepsize , double startTime, double endTime)
@@ -82,17 +82,17 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Filename to look for
-    std::string filename = "20satschampdata_12.dat";
+    std::string filename = "35sat_champ_is0.dat";
     // Relative folder of file (RELATIVE TO THE .EXE - /bin/applications/xx)
     std::string relFolder = "Propagate/";
     //Relative subfolder to place the output
-    std::string outputSubFolder = "champions_propagated/";
+    std::string outputSubFolder = "champions_propagated/25sats/";
 
     // Name attachment to differentiate result files
-    std::string attachment = "20sat_champ";
+    std::string attachment = "35sat_champ_is0";
 
     // Integer name of the population member to propagate for
-    int popmember = 11; // Remember - count starts at 0
+    int popmember = 0; // Remember - count starts at 0
 
     // for how long to propagate the orbit
     double daysToPropagate = 365*5;

@@ -82,20 +82,20 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // Filename to look for
-    std::string filename = "35sat_champ_is0.dat";
+    std::string filename = "15sat_champ_is0.dat";
     // Relative folder of file (RELATIVE TO THE .EXE - /bin/applications/xx)
     std::string relFolder = "Propagate/";
     //Relative subfolder to place the output
-    std::string outputSubFolder = "champions_propagated/25sats/";
+    std::string outputSubFolder = "champions_propagated/15sats/";
 
     // Name attachment to differentiate result files
-    std::string attachment = "35sat_champ_is0";
+    std::string attachment = "15sat_champ";
 
     // Integer name of the population member to propagate for
     int popmember = 0; // Remember - count starts at 0
 
     // for how long to propagate the orbit
-    double daysToPropagate = 365*5;
+    double daysToPropagate = 365*1.5;
 
     // Interpolation timesteps
     double interpolationTime = 4*3600;
@@ -143,6 +143,7 @@ int main( )
     double simulationEndEpoch = simulationStartEpoch +  daysToPropagate*tudat::physical_constants::JULIAN_DAY; //
     const double timestep_ = 30*60;
 
+    std::cout << "Will propagate from epoch" << simulationStartEpoch << " to " <<simulationEndEpoch << std::endl;
     // Define body settings for simulation.
     std::vector< std::string > bodiesToCreate;
     bodiesToCreate.push_back( "Sun" );
@@ -261,7 +262,7 @@ int main( )
 
     //std::cout << "Acceleration model map succesfully defined" << std::endl;
 
-    const double minimumStepSize = 0.01;
+    const double minimumStepSize = 1e-6;
     const double maximumStepSize = 24*3600;
     const double relativeErrorTolerance = 1E-11;
     const double absoluteErrorTolerance = 1E-11;

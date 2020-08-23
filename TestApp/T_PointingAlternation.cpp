@@ -57,11 +57,16 @@ int main( )
     }
     NamedBodyMap bodyMap = createBodies( bodySettings );
 
+    // Define list of dependent variables to save.
+    std::vector< std::shared_ptr< propagators::SingleDependentVariableSaveSettings > > dependentVariablesList;
+    dependentVariablesList.push_back( std::make_shared < propagators::SingleDependentVariableSaveSettings> (
+                                          propagators::keplerian_state_dependent_variable, "Moon", "Earth"));
+    // Create object with list of dependent variables.
+    std::shared_ptr< propagators::DependentVariableSaveSettings > dependentVariablesToSave =
+            std::make_shared< propagators::DependentVariableSaveSettings >( dependentVariablesList );
 
     for (int i = 0; i<=1; i++){
 
-        // Eigen::Cross<earthMoonVector, bodyMap["Moon"]->getVelocity()>
-        //Eigen::Vector3d moonMomentum = tudat::linear_algebra:: bodyMap["Moon"]->getVelocity();
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////             CREATE VEHICLE            /////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,21 +75,21 @@ int main( )
         bodyMap[ "Asterix" ] = std::make_shared< simulation_setup::Body >( );
         bodyMap[ "Asterix" ]->setConstantBodyMass( 5.0 );
         bodyMap[ "Obelix" ] = std::make_shared< simulation_setup::Body >();
-        bodyMap["Obelix"]->setConstantBodyMass(5.0);
+        bodyMap[ "Obelix" ]->setConstantBodyMass(5.0);
 
-        // Create aerodynamic coefficient interface settings.
-        double referenceArea = 0.32;
-        double aerodynamicCoefficient = 1.2;
-        std::shared_ptr< AerodynamicCoefficientSettings > aerodynamicCoefficientSettings =
-                std::make_shared< ConstantAerodynamicCoefficientSettings >(
-                    referenceArea, aerodynamicCoefficient * Eigen::Vector3d::UnitX( ), 1, 1 );
+//        // Create aerodynamic coefficient interface settings.
+//        double referenceArea = 0.32;
+//        double aerodynamicCoefficient = 1.2;
+//        std::shared_ptr< AerodynamicCoefficientSettings > aerodynamicCoefficientSettings =
+//                std::make_shared< ConstantAerodynamicCoefficientSettings >(
+//                    referenceArea, aerodynamicCoefficient * Eigen::Vector3d::UnitX( ), 1, 1 );
 
-        // Create and set aerodynamic coefficients object
-        bodyMap[ "Asterix" ]->setAerodynamicCoefficientInterface(
-                    createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Asterix" ) );
+//        // Create and set aerodynamic coefficients object
+//        bodyMap[ "Asterix" ]->setAerodynamicCoefficientInterface(
+//                    createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Asterix" ) );
 
-        bodyMap[ "Obelix"]->setAerodynamicCoefficientInterface(
-                    createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Obelix"));
+//        bodyMap[ "Obelix"]->setAerodynamicCoefficientInterface(
+//                    createAerodynamicCoefficientInterface( aerodynamicCoefficientSettings, "Obelix"));
 
         // Create radiation pressure settings
         double referenceAreaRadiation = 0.32;
@@ -147,28 +152,11 @@ int main( )
         accelerationsOfAsterix[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
                                                          basic_astrodynamics::cannon_ball_radiation_pressure ) );
 
-        accelerationsOfAsterix[ "Earth" ].push_back( std::make_shared< AccelerationSettings >(
-                                                         basic_astrodynamics::aerodynamic ) );
-
-        std::map< std::string, std::vector< std::shared_ptr< AccelerationSettings > > > accelerationsOfMoon;
-
-        accelerationsOfAsterix[ "Earth" ].push_back( std::make_shared< SphericalHarmonicAccelerationSettings >( 5, 5 ) );
-
-        accelerationsOfAsterix[ "Sun" ].push_back( std::make_shared< AccelerationSettings >(
-                                                       basic_astrodynamics::central_gravity ) );
-        accelerationsOfAsterix[ "Mars" ].push_back( std::make_shared< AccelerationSettings >(
-                                                         basic_astrodynamics::central_gravity ) );
-        accelerationsOfAsterix[ "Venus" ].push_back( std::make_shared< AccelerationSettings >(
-                                                         basic_astrodynamics::central_gravity ) );
-
         accelerationMap[ "Asterix" ] = accelerationsOfAsterix;
         accelerationMap[ "Obelix" ] = accelerationsOfAsterix;
-        accelerationMap[ "Moon" ] = accelerationsOfMoon;
         bodiesToPropagate.push_back( "Asterix" );
         centralBodies.push_back( "Earth" );
         bodiesToPropagate.push_back("Obelix");
-        centralBodies.push_back("Earth");
-        bodiesToPropagate.push_back("Moon");
         centralBodies.push_back("Earth");
 
         basic_astrodynamics::AccelerationMap accelerationModelMap = createAccelerationModelsMap(
@@ -177,31 +165,6 @@ int main( )
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////             CREATE PROPAGATION SETTINGS            ////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-        // Set Keplerian elements for Asterix.
-        Eigen::Vector6d asterixInitialStateInKeplerianElements;
-        asterixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 7500.0E3;
-        asterixInitialStateInKeplerianElements( eccentricityIndex ) = 0.1;
-        asterixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 0 );
-        asterixInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 235.7 );
-        asterixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
-        asterixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 139.87 );
-
-        // Set Keplerian elements for Obelix.
-        Eigen::Vector6d obelixInitialStateInKeplerianElements;
-        obelixInitialStateInKeplerianElements( semiMajorAxisIndex ) = 7500.05E3;
-        obelixInitialStateInKeplerianElements( eccentricityIndex ) = 0.1;
-        obelixInitialStateInKeplerianElements( inclinationIndex ) = unit_conversions::convertDegreesToRadians( 1.5 );
-        obelixInitialStateInKeplerianElements( argumentOfPeriapsisIndex ) = unit_conversions::convertDegreesToRadians( 235.7 );
-        obelixInitialStateInKeplerianElements( longitudeOfAscendingNodeIndex ) = unit_conversions::convertDegreesToRadians( 23.4 );
-        obelixInitialStateInKeplerianElements( trueAnomalyIndex ) = unit_conversions::convertDegreesToRadians( 139.87 );
-        double earthGravitationalParameter = bodyMap.at( "Earth" )->getGravityFieldModel( )->getGravitationalParameter( );
-        //const Eigen::Vector6d asterixInitialState = convertKeplerianToCartesianElements(
-        //           asterixInitialStateInKeplerianElements, earthGravitationalParameter );
-
-        //const Eigen::Vector6d obelixInitialState = convertKeplerianToCartesianElements(
-        //            obelixInitialStateInKeplerianElements, earthGravitationalParameter );
 
 
         Eigen::Vector6d moonInitialState = getInitialStateOfBody("Moon", "Earth", bodyMap, simulationStartEpoch);
@@ -221,7 +184,7 @@ int main( )
         obelixInitialState.segment(3,3) = L4initVelocity + displaceVelocity;
 
         Eigen::Vector6d asterixDisplacement = Eigen::Vector6d();
-        asterixDisplacement(0) = 100;
+        asterixDisplacement(0) = 0;
         asterixDisplacement(1) = 1e3;
 
         Eigen::Vector6d asterixInitialState = Eigen::Vector6d();
@@ -230,14 +193,14 @@ int main( )
 
 
         // Set initial state
-        Eigen::VectorXd systemInitialState = Eigen::VectorXd( 18 );
+        Eigen::VectorXd systemInitialState = Eigen::VectorXd( 12 );
         systemInitialState.segment( 0, 6 ) = asterixInitialState;
         systemInitialState.segment( 6, 6 ) = obelixInitialState;
-        systemInitialState.segment(12,6) = moonInitialState;
 
         std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
                 std::make_shared< TranslationalStatePropagatorSettings< double > >
-                ( centralBodies, accelerationModelMap, bodiesToPropagate, systemInitialState, simulationEndEpoch );
+                ( centralBodies, accelerationModelMap, bodiesToPropagate, systemInitialState, simulationEndEpoch,
+                  propagators::cowell, dependentVariablesToSave  );
 
         const double fixedStepSize = 30.0*60.0;
         std::shared_ptr< IntegratorSettings< > > integratorSettings =
@@ -279,6 +242,24 @@ int main( )
         // Write perturbed satellite propagation history to file.
         input_output::writeDataMapToTextFile( integrationResult,
                                               "propagationHistory" + nameAttach + ".dat",
+                                              tudat_applications::getOutputPath( ) + outputSubFolder,
+                                              "",
+                                              std::numeric_limits< double >::digits10,
+                                              std::numeric_limits< double >::digits10,
+                                              "," );
+
+        std::map<double, Eigen::VectorXd> lunarkeplerMap = dynamicsSimulator.getDependentVariableHistory();
+        double mu = bodyMap["Earth"]->getGravityFieldModel()->getGravitationalParameter();
+        std::map< double, Eigen::VectorXd > moonstate;
+        for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = lunarkeplerMap.begin( );
+                 stateIterator != lunarkeplerMap.end( ); stateIterator++ ){
+            Eigen::Vector6d grabber = stateIterator->second;
+            moonstate.insert(std::pair<double,Eigen::VectorXd>(stateIterator->first , convertKeplerianToCartesianElements(grabber,mu) ));
+        }
+
+        // Write lunar state history to file.
+        input_output::writeDataMapToTextFile( moonstate,
+                                              "propagationHistory_moon.dat",
                                               tudat_applications::getOutputPath( ) + outputSubFolder,
                                               "",
                                               std::numeric_limits< double >::digits10,

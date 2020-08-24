@@ -43,10 +43,10 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 50;
+    int n_generations = 75;
     int n_islands = 8;
     int n_pops = 32;
-    int r_seed = 72;
+    int r_seed = 42;
     int n_sats = 15;
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
     int n_internal = 1;
@@ -65,7 +65,7 @@ int main( )
                                              "Generational Ant Colony"};
     std::vector<std::string> algo_names_shorthand{"de1220", "sade", "pso", "pso_gen", "gaco"};
 
-    string namesnip = "singlemethod_top_sd" + std::to_string(r_seed) +
+    string namesnip = "singlemethod_long_sd" + std::to_string(r_seed) +
             "_sats" + std::to_string(n_sats) + "_nisl" + std::to_string(n_islands) + "_npop" + std::to_string(n_pops) +
             "_int" + std::to_string(n_internal);
 

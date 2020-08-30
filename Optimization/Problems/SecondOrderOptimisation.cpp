@@ -250,15 +250,22 @@ std::vector<double> SecondOrderOptimisation::fitness(const std::vector<double> &
     //std::cout << "Start displacing satellites" << std::endl;
     for (int i = 0; i < swarmSize_; i++){
         Eigen::Vector3d Displacement = Eigen::Vector3d();
-        Displacement(0) = x[3*i]; // 1: 100
-        Displacement(1) = x[1+3*i];
-        Displacement(2) = x[2+3*i];
+        Displacement(0) = x[6*i]; // 1: 100
+        Displacement(1) = x[1+6*i];
+        Displacement(2) = x[2+6*i];
+
+        Eigen::Vector3d Velocity = Eigen::Vector3d();
+        Velocity(0) = x[3+6*i]; // 1: 100
+        Velocity(1) = x[4+6*i];
+        Velocity(2) = x[5+6*i];
 
         Eigen::Vector6d InitialState = Eigen::Vector6d();
         InitialState.segment(0,3) = corePosition_ + L4Cart_ + Displacement;
-        InitialState.segment(3,3) = stableVelocity + coreVelocity_;
+        InitialState.segment(3,3) = stableVelocity + coreVelocity_ + Velocity;
 
         systemInitialState.segment( 6*i, 6 ) = InitialState;
+        //std::cout << "satellite nr " << i << "initial state: " << std::endl;
+        //std::cout << InitialState << std::endl;
     }
 
     std::shared_ptr< TranslationalStatePropagatorSettings< double > > propagatorSettings =
@@ -279,47 +286,53 @@ std::vector<double> SecondOrderOptimisation::fitness(const std::vector<double> &
     //std::cout << "Fully simulated the satellite motion" << std::endl;
 
     //Retrieve results
-    std::map< double, Eigen::VectorXd > integrationResult = InterpolateData(dynamicsSimulator.getEquationsOfMotionNumericalSolution( ),interpolationTime_);
-    previousStateHistory_ = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
-    previousFinalState_ = previousStateHistory_.rbegin( )->second;
 
-
-    /* COST FUNCTION */
-
-    // Simple cost function; penalize too large or too little baselines
-
-
-    //std::cout << "Starting cost function" << std::endl;
+    auto results = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
     std::vector<double> penalizedBaselineHistory;
+    std::map< double, Eigen::VectorXd > integrationResult;
     double cost = 0.;
     int count = 0;
     double baseline, baselinerate;
 
-    int bsit1, bsit2, bsrit1, bsrit2;
-    for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = integrationResult.begin( );
-             stateIterator != integrationResult.end( ); stateIterator++ ){
-        for ( int i = 0; i < swarmSize_; i++){
-            for ( int j = 0; j <  swarmSize_ -1 -i; j++){
-                count++;
+    if (results.size() != 0){
+        //std::cout << "evaluate cost function" << std::endl;
+        integrationResult = InterpolateData(results,interpolationTime_);
+        previousStateHistory_ = dynamicsSimulator.getEquationsOfMotionNumericalSolution( );
+        previousFinalState_ = previousStateHistory_.rbegin( )->second;
 
-                bsit1 = 6*i;
-                bsit2 = 6*(swarmSize_- j -1);
-                bsrit1 = bsit1 + 3;
-                bsrit2 = bsit2 + 3;
 
-                ////std::cout << "baseline comp will try to access values " << bsit1 << " to " << bsit2 << std::endl;
-                ////std::cout << "baselinerate comp will try to access values " << bsrit1 << " to " << bsrit2 << std::endl;
-                baseline = (stateIterator->second.segment(bsit1,3) - stateIterator->second.segment(bsit2,3)).norm();
-                baselinerate = (stateIterator->second.segment(bsrit1,3) - stateIterator->second.segment(bsrit2,3)).norm();
-                if (baselinerate > 1 || (baseline > 100e3 || baseline< 500)){ cost++;
-                    penalizedBaselineHistory.push_back(baseline);
-                    penalizedBaselineHistory.push_back(baselinerate);
-                //std::cout << "Penalized a baseline with size: " + std::to_string(baseline) << std::endl;
+        /* COST FUNCTION */
+
+        int bsit1, bsit2, bsrit1, bsrit2;
+        for( std::map< double, Eigen::VectorXd >::const_iterator stateIterator = integrationResult.begin( );
+                 stateIterator != integrationResult.end( ); stateIterator++ ){
+            for ( int i = 0; i < swarmSize_; i++){
+                for ( int j = 0; j <  swarmSize_ -1 -i; j++){
+                    count++;
+
+                    bsit1 = 6*i;
+                    bsit2 = 6*(swarmSize_- j -1);
+                    bsrit1 = bsit1 + 3;
+                    bsrit2 = bsit2 + 3;
+
+                    ////std::cout << "baseline comp will try to access values " << bsit1 << " to " << bsit2 << std::endl;
+                    ////std::cout << "baselinerate comp will try to access values " << bsrit1 << " to " << bsrit2 << std::endl;
+                    baseline = (stateIterator->second.segment(bsit1,3) - stateIterator->second.segment(bsit2,3)).norm();
+                    baselinerate = (stateIterator->second.segment(bsrit1,3) - stateIterator->second.segment(bsrit2,3)).norm();
+                    if (baselinerate > 1 || (baseline > 100e3 || baseline< 500)){ cost++;
+                        penalizedBaselineHistory.push_back(baseline);
+                        penalizedBaselineHistory.push_back(baselinerate);
+                    //std::cout << "Penalized a baseline with size: " + std::to_string(baseline) << "and rate: " << std::to_string(baselinerate) << std::endl;
+                    }
                 }
             }
-        }
 
+        }
     }
+    else{
+        cost = 1e8;
+    }
+
 
     //std::cout << "cost function evaluated a total of " << count << " baselines" << std::endl;
     if (cost < bestCost_){
@@ -328,9 +341,15 @@ std::vector<double> SecondOrderOptimisation::fitness(const std::vector<double> &
         std::cout << "Updated bestCost_ to:" << bestCost_ << std::endl;
         bestStateHistory_ = integrationResult;
         penalizedBaselineHistory_ = penalizedBaselineHistory;
-        lunarkeplerMap_ = dynamicsSimulator.getDependentVariableHistory();
+
         bestPopulationData_ = x;
     }
+
+    if (lunarkeplerMap_.size() < 3){
+        lunarkeplerMap_ = dynamicsSimulator.getDependentVariableHistory();
+        //std::cout << lunarkeplerMap_.size();
+    }
+    //lunarkeplerMap_ = dynamicsSimulator.getDependentVariableHistory();
 
     std::vector<double> output = {cost};
 
@@ -345,10 +364,10 @@ std::pair<std::vector<double>, std::vector<double>> SecondOrderOptimisation::get
 {
     std::vector<double> lowerbounds;
     std::vector<double> upperbounds;
-    std::vector<double> lowerpositionbounds = {-50.e3, -50.e3, -50.e3};
-    std::vector<double> upperpositionbounds = {50.e3, 50.e3, 50.e3};
-    std::vector<double> lowervelocitybounds = {-5, -5, -5};
-    std::vector<double> uppervelocitybounds = {5, 5, 5};
+    std::vector<double> lowerpositionbounds = {-15.e3, -15.e3, -50.e3};
+    std::vector<double> upperpositionbounds = {15.e3, 15.e3, 50.e3};
+    std::vector<double> lowervelocitybounds = {-0.1, -0.1, -0.1};
+    std::vector<double> uppervelocitybounds = {0.1, 0.1, 0.1};
 
     // Insert a position, velocity pair
     for (int i =0; i < swarmSize_; i++){

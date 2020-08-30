@@ -103,6 +103,7 @@ struct SecondOrderOptimisation{
 
     std::map< double, Eigen::VectorXd > ComputeLunarOrbit()
     {
+         std::cout << "Compute lunar orbit, Lmap size: " << lunarkeplerMap_.size() << std::endl;
         using namespace tudat::orbital_element_conversions;
         double mu = bodyMap_["Earth"]->getGravityFieldModel()->getGravitationalParameter();
         std::map< double, Eigen::VectorXd > newmap;
@@ -111,6 +112,7 @@ struct SecondOrderOptimisation{
             Eigen::Vector6d grabber = stateIterator->second;
             newmap.insert(std::pair<double,Eigen::VectorXd>(stateIterator->first , convertKeplerianToCartesianElements(grabber,mu) ));
         }
+        std::cout << "Compute lunar orbit, newmap size: " << newmap.size() << std::endl;
         return InterpolateData(newmap,interpolationTime_);
     }
 
@@ -138,14 +140,14 @@ protected:
     double interpolationTime_ = 1*3600;
     mutable int bestCost_ = 1e8;
 
-    mutable Eigen::Vector3d corePosition_, coreVelocity_;
+
     mutable Eigen::Vector3d L4Cart_, moonVelocity_, moonMomentum_;
 
     mutable basic_astrodynamics::AccelerationMap accelerationModelMap_;
     mutable std::vector< std::string > bodiesToPropagate_,centralBodies_;
     mutable std::vector< double > bestPopulationData_;
     mutable std::shared_ptr< propagators::DependentVariableSaveSettings > dependentVariablesToSave_;
-
+    mutable Eigen::Vector3d corePosition_, coreVelocity_;
     mutable std::map< double, Eigen::VectorXd > previousStateHistory_;
     mutable std::map< double, Eigen::VectorXd > bestStateHistory_;
     mutable Eigen::VectorXd previousFinalState_;
@@ -153,6 +155,7 @@ protected:
     mutable std::map< double, Eigen::VectorXd > previousDependentVariablesHistory_;
     mutable Eigen::VectorXd previousDependentVariablesFinalValues_;
 
+public:
     mutable std::map< double, Eigen::VectorXd> interpolatedMap_;
     mutable std::map< double, Eigen::VectorXd> lunarkeplerMap_;
 

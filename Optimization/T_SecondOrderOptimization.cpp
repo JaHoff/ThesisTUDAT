@@ -75,11 +75,11 @@ int main( )
     double missionLength = n_days*tudat::physical_constants::JULIAN_DAY;
 
 
-    std::cout << "Eudoxos updated to newest version: 35sats25orbit" << std::endl;
+    std::cout << "Eudoxos updated to newest version: 35sats25orbita2" << std::endl;
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
     int internalIterations = 5;
 
-    string subfolder = "/35sats_secondOrder_25orbit/";
+    string subfolder = "/35sats_secondOrder_25orbitA2/";
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",
@@ -176,8 +176,6 @@ int main( )
         std::cout << "evolution done!" << std::endl;
 
 
-
-
         int islandcount = 0;
 
         // iterate through the islands and store their generational data in files
@@ -195,18 +193,12 @@ int main( )
             double bestgencost = pops.get_f()[pops.best_idx()][0];
             if (bestgencost < bestcost) {bestcost = bestgencost; championIndex = islandcount;}
 
-
-            // print intermediate champion data along with cost to file
-            auto SP = swarmProblems.at( islandcount);
-            input_output::writeMatrixToFile(SP.getBestPopulationData(),
-                                              "intermediatechampionData_isl"+ std::to_string(islandcount)+"_c"+std::to_string(int(bestgencost))+".dat",6,
-                                              swarm_optimization::getOutputPath( ) + subfolder);
             islandcount++;
         }
 
         // If an optima is found, stop iterating
         // Else continue until the given maximum
-        if (i > n_generations || bestcost == 0){ iterate = false;}
+        if (i > n_generations || bestcost == 0){ iterate = false; std::cout << "iterate OFF" << std::endl;}
     }
 
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -221,26 +213,28 @@ int main( )
     int c = 0;
     // Iterate through the islands to write the relevant data to files
     for (auto it = arch.begin(); it != arch.end(); it++){
-
-        auto SP = swarmProblems.at( c);
+        ////// THIS UPDATES THE ACTUAL SWARMPROBLEMS IN THE VECTOR !
+        auto SP = &swarmProblems.at( c);
         // Retrieve final Cartesian states for population in last generation, and save final states to a file.
         std::vector<std::vector< double > > decisionVariables = it->get_population( ).get_x( );
         std::map< int, Eigen::VectorXd > finalStates;
         for( unsigned int i = 0; i < decisionVariables.size( ); i++ )
         {
-            SP.fitness( decisionVariables.at( i ) );
-            finalStates[ i ] = SP.getPreviousFinalState( );
+            SP->fitness( decisionVariables.at( i ) );
+            finalStates[ i ] = SP->getPreviousFinalState( );
         }
         tudat::input_output::writeDataMapToTextFile(
                     finalStates, "swarmFinalStates_"+namesnip+".dat", swarm_optimization::getOutputPath( ) + subfolder );
+        //std::cout << "lunar kepler vector size2: " << SP->lunarkeplerMap_.size() << "with cost " << SP->getBestCost() << std::endl;
+        c++;
     }
 
     ///// Output champion data
 
-    SecondOrderOptimisation champ = swarmProblems.at(championIndex);
+    auto champ = &swarmProblems.at(championIndex);
 
     // Write lunar state history to file.
-    input_output::writeDataMapToTextFile( champ.ComputeLunarOrbit(),
+    input_output::writeDataMapToTextFile( champ->ComputeLunarOrbit(),
                                           "propagationHistory_moon.dat",
                                           swarm_optimization::getOutputPath( ) + subfolder,
                                           "",
@@ -249,12 +243,12 @@ int main( )
                                           "," );
 
     // Write core position to file.
-    input_output::writeMatrixToFile(champ.getCorePosition(),
+    input_output::writeMatrixToFile(champ->getCorePosition(),
                                     "corePosition_"+namesnip+"_best.dat",10,
                                     swarm_optimization::getOutputPath( ) + subfolder ) ;
 
     // Write the champion orbit data to a file.
-    input_output::writeDataMapToTextFile( champ.getBestStateHistory(),
+    input_output::writeDataMapToTextFile( champ->getBestStateHistory(),
                                           "propagationHistory_"+namesnip+"_best.dat",
                                           swarm_optimization::getOutputPath( ) + subfolder,
                                           "",
@@ -263,7 +257,7 @@ int main( )
                                           "," );
 
     // Write down files that show the baselines which triggered the cost function
-    input_output::writeDataMapToTextFile(champ.getPenalizedBaselineHistoryMap(),
+    input_output::writeDataMapToTextFile(champ->getPenalizedBaselineHistoryMap(),
                                           "penaltyHistory_"+namesnip+".dat",
                                           swarm_optimization::getOutputPath( ) + subfolder,
                                           "",
@@ -272,7 +266,7 @@ int main( )
                                           ",");
 
     // Write down file with best population variables
-    input_output::writeMatrixToFile(champ.getBestPopulationData(),
+    input_output::writeMatrixToFile(champ->getBestPopulationData(),
                                       "championData_"+namesnip+".dat",10,
                                       swarm_optimization::getOutputPath( ) + subfolder);
 

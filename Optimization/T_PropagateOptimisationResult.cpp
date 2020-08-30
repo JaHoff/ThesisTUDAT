@@ -80,22 +80,23 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////////////////////            SETTINGS                      //////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    // 2nd order optimisation result?
+    bool SecondOrder = true;
     // Filename to look for
-    std::string filename = "15sat_champ_is0.dat";
+    std::string filename = "population_35_2ndorder_25.dat";
     // Relative folder of file (RELATIVE TO THE .EXE - /bin/applications/xx)
     std::string relFolder = "Propagate/";
     //Relative subfolder to place the output
-    std::string outputSubFolder = "champions_propagated/15sats/";
+    std::string outputSubFolder = "champions_propagated/35sats2ndorder25/";
 
     // Name attachment to differentiate result files
-    std::string attachment = "15sat_champ";
+    std::string attachment = "35sat_champ";
 
     // Integer name of the population member to propagate for
     int popmember = 0; // Remember - count starts at 0
 
     // for how long to propagate the orbit
-    double daysToPropagate = 365*1.5;
+    double daysToPropagate = 365*5;
 
     // Interpolation timesteps
     double interpolationTime = 4*3600;
@@ -121,8 +122,14 @@ int main( )
     std::cout << "found data!" << std::endl;
 
     Eigen::VectorXd popdata = x.row(popmember);
+    int n_satellites;
+    if (SecondOrder){
+       n_satellites  = (popdata.size()) / 6;
+    }
+    else{
+       n_satellites = (popdata.size() - 6) / 3;
+    }
 
-    int n_satellites = (popdata.size() - 6) / 3;
 
     std::cout << "Grabbed population number " << popmember << ", retrieved following vector:" << std::endl;
     std::cout << popdata << std::endl;
@@ -276,16 +283,30 @@ int main( )
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///
 
-//    //std::cout << "L4 position: " << L4Cart << std::endl;
+//std::cout << "L4 position: " << L4Cart << std::endl;
     // Displace the core of the swarm based off a variable
     Eigen::Vector3d coreDisplacement = Eigen::Vector3d();
-    coreDisplacement(0) = popdata[0];
-    coreDisplacement(1) = popdata[1];
-    coreDisplacement(2) = popdata[2];
+    Eigen::Vector3d additionalVelocity = Eigen::Vector3d();
+    if (SecondOrder){
+        coreDisplacement = {4451595.805418905,
+                            45662.36398591232,
+                            -3765.688752660145};
+        additionalVelocity = {2.181963044975345,
+                              -13.29823474082929,
+                              -12.3799288546268};
+    }
+    else{
+        coreDisplacement(0) = popdata[0];
+        coreDisplacement(1) = popdata[1];
+        coreDisplacement(2) = popdata[2];
+        additionalVelocity = {popdata[3],popdata[4],popdata[5]};
+    }
+
+
     Eigen::Vector3d corePosition = L4Cart + coreDisplacement;
     // Set the swarm velocity based off the core position plus a additionalVelocity variable
     Eigen::Vector3d stableVelocity = -L4Cart.cross(moonMomentum).normalized() * moonVelocity.norm();
-    Eigen::Vector3d additionalVelocity = {popdata[3],popdata[4],popdata[5]};
+
 
     // Set initial state
     Eigen::VectorXd systemInitialState = Eigen::VectorXd( 6*n_satellites);
@@ -293,9 +314,17 @@ int main( )
     //std::cout << "Start displacing satellites" << std::endl;
     for (int i = 0; i < n_satellites; i++){
         Eigen::Vector3d Displacement = Eigen::Vector3d();
-        Displacement(0) = popdata[6+3*i]; // 1: 100
-        Displacement(1) = popdata[7+3*i];
-        Displacement(2) = popdata[8+3*i];
+
+        if (SecondOrder){
+            Displacement(0) = popdata[0 + 6*i]; // 1: 100
+            Displacement(1) = popdata[1 + 6*i];
+            Displacement(2) = popdata[2 + 6*i];
+        }
+        else{
+            Displacement(0) = popdata[6+3*i]; // 1: 100
+            Displacement(1) = popdata[7+3*i];
+            Displacement(2) = popdata[8+3*i];
+        }
 
         Eigen::Vector6d InitialState = Eigen::Vector6d();
         InitialState.segment(0,3) = corePosition + Displacement;

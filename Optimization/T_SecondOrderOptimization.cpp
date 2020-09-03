@@ -48,7 +48,7 @@ int main( )
     int n_pops = 32;
     int r_seed = 72;
     int n_sats = 35;
-    int n_days = 1*365;
+    int n_days = 2*365;
 
     // Optimum for 25 satellites
 //    Eigen::Vector3d corePosition = {4451595.805418905,
@@ -59,19 +59,13 @@ int main( )
 //                                    -12.3799288546268};
 
     // Optimum for 35 satellites
-//    Eigen::Vector3d corePosition = {122670.1132513513,
-//                                    204025.4238392569,
-//                                    -16340.35626783537};
-//    Eigen::Vector3d coreVelocity = {-6.994608662844569,
-//                                    14.72019415863956,
-//                                    5.159453175916575};
+    Eigen::Vector3d corePosition = {122670.1132513513,
+                                    204025.4238392569,
+                                    -16340.35626783537};
+    Eigen::Vector3d coreVelocity = {-6.994608662844569,
+                                    14.72019415863956,
+                                    5.159453175916575};
 
-    Eigen::Vector3d corePosition = {4451595.805418905,
-                                    45662.36398591232,
-                                    -3765.688752660145};
-    Eigen::Vector3d coreVelocity = {2.181963044975345,
-                                    -13.29823474082929,
-                                    -12.3799288546268};
     double missionLength = n_days*tudat::physical_constants::JULIAN_DAY;
 
 
@@ -79,7 +73,7 @@ int main( )
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
     int internalIterations = 5;
 
-    string subfolder = "/35sats_secondOrder_25orbitA2/";
+    string subfolder = "/35sats_secondOrder_35orbitA2/";
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",

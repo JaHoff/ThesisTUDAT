@@ -43,11 +43,11 @@ using namespace tudat;
 
 int main( )
 {
-    int n_generations = 200;
-    int n_islands = 32;
+    int n_generations = 100;
+    int n_islands = 24;
     int n_pops = 48;
     int r_seed = 72;
-    int n_sats = 35;
+    int n_sats = 50;
     int n_days = 365;
 
     double missionLength = n_days*tudat::physical_constants::JULIAN_DAY;
@@ -57,7 +57,7 @@ int main( )
     // The number of internal iterations a island goes through before the next global generation, yields more efficient progress per iteration, but slower generation computations
     int internalIterations = 5;
 
-    string subfolder = "/35sats/";
+    string subfolder = "/50sats/";
     std::cout << "General optimization start!" << std::endl;
 
     std::vector<std::string> algo_list_names{"Differential Evolution", "Self Adjusting Differential Evolution",
@@ -189,26 +189,28 @@ int main( )
     int c = 0;
     // Iterate through the islands to write the relevant data to files
     for (auto it = arch.begin(); it != arch.end(); it++){
-
-        auto SP = swarmProblems.at( c);
+        ////// THIS UPDATES THE ACTUAL SWARMPROBLEMS IN THE VECTOR !
+        auto SP = &swarmProblems.at( c);
         // Retrieve final Cartesian states for population in last generation, and save final states to a file.
         std::vector<std::vector< double > > decisionVariables = it->get_population( ).get_x( );
         std::map< int, Eigen::VectorXd > finalStates;
         for( unsigned int i = 0; i < decisionVariables.size( ); i++ )
         {
-            SP.fitness( decisionVariables.at( i ) );
-            finalStates[ i ] = SP.getPreviousFinalState( );
+            SP->fitness( decisionVariables.at( i ) );
+            finalStates[ i ] = SP->getPreviousFinalState( );
         }
         tudat::input_output::writeDataMapToTextFile(
-                    finalStates, "swarmFinalStates_"+namesnip+std::to_string(c)+".dat", swarm_optimization::getOutputPath( ) + subfolder );
+                    finalStates, "swarmFinalStates_"+namesnip+".dat", swarm_optimization::getOutputPath( ) + subfolder );
+        //std::cout << "lunar kepler vector size2: " << SP->lunarkeplerMap_.size() << "with cost " << SP->getBestCost() << std::endl;
+        c++;
     }
 
     ///// Output champion data
 
-    SwarmOptimization champ = swarmProblems.at(championIndex);
+    auto champ = &swarmProblems.at(championIndex);
 
     // Write lunar state history to file.
-    input_output::writeDataMapToTextFile( champ.ComputeLunarOrbit(),
+    input_output::writeDataMapToTextFile( champ->ComputeLunarOrbit(),
                                           "propagationHistory_moon.dat",
                                           swarm_optimization::getOutputPath( ) + subfolder,
                                           "",
@@ -217,12 +219,12 @@ int main( )
                                           "," );
 
     // Write core position to file.
-    input_output::writeMatrixToFile(champ.getCorePosition(),
+    input_output::writeMatrixToFile(champ->getCorePosition(),
                                     "corePosition_"+namesnip+"_best.dat",10,
                                     swarm_optimization::getOutputPath( ) + subfolder ) ;
 
     // Write the champion orbit data to a file.
-    input_output::writeDataMapToTextFile( champ.getBestStateHistory(),
+    input_output::writeDataMapToTextFile( champ->getBestStateHistory(),
                                           "propagationHistory_"+namesnip+"_best.dat",
                                           swarm_optimization::getOutputPath( ) + subfolder,
                                           "",
@@ -231,7 +233,7 @@ int main( )
                                           "," );
 
     // Write down files that show the baselines which triggered the cost function
-    input_output::writeDataMapToTextFile(champ.getPenalizedBaselineHistoryMap(),
+    input_output::writeDataMapToTextFile(champ->getPenalizedBaselineHistoryMap(),
                                           "penaltyHistory_"+namesnip+".dat",
                                           swarm_optimization::getOutputPath( ) + subfolder,
                                           "",
@@ -240,7 +242,7 @@ int main( )
                                           ",");
 
     // Write down file with best population variables
-    input_output::writeMatrixToFile(champ.getBestPopulationData(),
+    input_output::writeMatrixToFile(champ->getBestPopulationData(),
                                       "championData_"+namesnip+".dat",10,
                                       swarm_optimization::getOutputPath( ) + subfolder);
 

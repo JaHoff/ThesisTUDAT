@@ -44,7 +44,7 @@ using namespace tudat;
 int main( )
 {
     int n_generations = 100;
-    int n_islands = 24;
+    int n_islands = 16;
     int n_pops = 48;
     int r_seed = 72;
     int n_sats = 50;

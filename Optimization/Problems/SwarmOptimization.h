@@ -8,7 +8,7 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
-
+/* Problem file for the general swarm optimisation */
 #ifndef TUDAT_SWARM_OPTIMIZATION_HPP
 #define TUDAT_SWARM_OPTIMIZATION_HPP
 

@@ -14,6 +14,7 @@
  */
 
 
+/* Source file for the swarm optimisation */
 
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 #include <Tudat/Mathematics/RootFinders/secantRootFinder.h>

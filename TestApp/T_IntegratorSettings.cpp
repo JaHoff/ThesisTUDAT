@@ -8,6 +8,8 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+
+/* Used to analyse the effect of different settings for integrators */
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 
 #include "TestApp/applicationOutput.h"

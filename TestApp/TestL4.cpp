@@ -8,6 +8,7 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+/* Early stage testing application for designing L4-centric orbits */
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 
 #include "TestApp/applicationOutput.h"

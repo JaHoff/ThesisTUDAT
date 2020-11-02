@@ -8,6 +8,7 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+/* Used to study the effect of changes in body pointing on solar radiation pressure and orbit evolution */
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 
 #include "TestApp/applicationOutput.h"

@@ -10,6 +10,7 @@
 
 
 /* Optimize the configuration of a small satellite swarm in orbit around the L4 point
+ * Coarse grain methods - Compare the performance of multiple independent optimisation algorithms
 Base adapted from the propagationTargetingExample included by TUDAT*/
 
 #include <chrono>

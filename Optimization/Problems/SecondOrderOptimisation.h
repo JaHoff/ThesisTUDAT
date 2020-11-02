@@ -11,6 +11,7 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+/* Problem file for the 2nd-stage optimisation */
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 
 #include <utility>

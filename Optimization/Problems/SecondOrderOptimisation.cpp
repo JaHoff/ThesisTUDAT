@@ -14,6 +14,7 @@
  */
 
 
+/* Source file for the second-stage optimisation */
 
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 #include <Tudat/Mathematics/RootFinders/secantRootFinder.h>

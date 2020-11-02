@@ -8,6 +8,7 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+/* DEPRECATED - testing application */
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 
 #include "TestApp/applicationOutput.h"

@@ -8,6 +8,7 @@
  *    http://tudat.tudelft.nl/LICENSE.
  */
 
+/* Generate a set of orbits for relative placement along a grid, used to map the cost function along a 2-d plane */
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 
 #include "TestApp/applicationOutput.h"

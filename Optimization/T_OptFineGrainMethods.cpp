@@ -10,7 +10,11 @@
 
 
 /* Optimize the configuration of a small satellite swarm in orbit around the L4 point
-Base adapted from the propagationTargetingExample included by TUDAT*/
+Base adapted from the propagationTargetingExample included by TUDAT
+
+Compare the performance of fine-grain optimisation methods using batch fitness evaluation.
+
+DEPRECATED - Not supported in TUDAT*/
 
 #include <chrono>
 

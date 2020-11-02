@@ -10,6 +10,7 @@
 
 
 /* Optimize the configuration of a small satellite swarm in orbit around the L4 point
+ * Multimethods - Compare the performance of multiple connected algorithms with support for using different algorithms in conjecture
 Base adapted from the propagationTargetingExample included by TUDAT*/
 
 #include <chrono>

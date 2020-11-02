@@ -10,7 +10,9 @@
 
 
 /* Optimize the configuration of a small satellite swarm in orbit around the L4 point
-Base adapted from the propagationTargetingExample included by TUDAT*/
+Base adapted from the propagationTargetingExample included by TUDAT
+
+Code used to generate results for the same problem using different optimisation algorithms for comparison*/
 
 #include <chrono>
 

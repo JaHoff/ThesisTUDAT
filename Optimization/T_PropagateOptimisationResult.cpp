@@ -9,7 +9,7 @@
  */
 
 
-
+/* Propagate the orbit of a optimisation result / swarm constellation for a set timeframe */
 
 #include <Tudat/SimulationSetup/tudatSimulationHeader.h>
 #include "Tudat/InputOutput/basicInputOutput.h"
